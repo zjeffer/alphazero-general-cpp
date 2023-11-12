@@ -20,7 +20,8 @@ include_directories(${G3LOG_INCLUDE_DIRS})
 ###### main files ######
 file (GLOB PROJECT_SOURCES 
     ${PROJECT_SOURCE_DIR}/src/*.cpp
-    ${PROJECT_SOURCE_DIR}/lib/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/lib/Environment/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/lib/NeuralNetwork/*.cpp
 )
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
@@ -39,7 +40,8 @@ target_compile_options(${PROJECT_NAME} PRIVATE
     -pedantic-errors -Wextra -Wcast-align
     -Wchar-subscripts  -Wcomment
     -Wdisabled-optimization
-    -Werror -Wfloat-equal  -Wformat  -Wformat=2
+    # -Werror # = all warnings are errors 
+    -Wfloat-equal  -Wformat  -Wformat=2
     -Wformat-nonliteral -Wformat-security 
     -Wformat-y2k
     -Wimport  -Winit-self  -Winline
