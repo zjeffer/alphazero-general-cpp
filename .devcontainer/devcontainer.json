@@ -1,0 +1,24 @@
+{
+  "name": "AlphaZero",
+  "build": {
+    "dockerfile": "../Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cpptools-themes",
+        "ms-vscode.cpptools",
+        "cschlosser.doxdocgen",
+        "GitHub.copilot",
+        "GitHub.vscode-pull-request-github",
+        "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools-extension-pack",
+        "tdennis4496.cmantic"
+      ]
+    }
+  },
+  "runArgs": [
+    "--gpus=all"
+  ]
+}
