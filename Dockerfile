@@ -2,7 +2,7 @@ FROM zjeffer/docker-arch-cuda:main
 
 WORKDIR /app
 
-RUN pacman -Syyu --noconfirm clang cmake make gcc gdb git sudo
+RUN pacman -Syyu --noconfirm clang cmake make gcc gdb git sudo less
 
 # add user
 ################# USER & GROUP CREATION #################
@@ -22,5 +22,10 @@ COPY ./vendor/g3log/ ./vendor/g3log/
 RUN sudo chown -R $USERNAME:$USERNAME /app
 RUN mkdir /app/vendor/g3log/build
 RUN cd /app/vendor/g3log/build && cmake .. && sudo cmake --build . --target install
+
+# zsh & oh-my-zsh
+RUN sudo pacman -S --noconfirm zsh
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+RUN sudo chsh -s /bin/zsh $USERNAME
 
 COPY . .
