@@ -3,8 +3,8 @@
 #include <filesystem>
 #include <string>
 
-#include "lib/Environment/Environment.hpp"
-#include "lib/NeuralNetwork/Network.hpp"
+#include "../Environment/Environment.hpp"
+#include "Network.hpp"
 
 /**
  * @brief The NeuralNetwork class holds the torch Network to run inference with.
@@ -14,7 +14,7 @@
 class NeuralNetwork
 {
 public:
-  NeuralNetwork();
+  NeuralNetwork(NetworkArchitecture const & architecture);
   ~NeuralNetwork() = default;
 
   Network GetNetwork();

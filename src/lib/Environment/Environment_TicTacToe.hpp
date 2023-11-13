@@ -62,6 +62,8 @@ public:
   bool   IsTerminal() const override;
   Player GetWinner() const override;
 
+  torch::Tensor BoardToInput() const;
+
   void PrintBoard() const override;
 
   void ResetEnvironment() override;

@@ -1,12 +1,15 @@
 #include <iostream>
 
 #include "lib/Environment/Environment_TicTacToe.hpp"
+#include "lib/Logging/Logger.hpp"
+
+Logger logger;
 
 int main()
 {
-  EnvironmentTicTacToe env;
-  env.MakeMove(Move(0, 0));
-  env.MakeMove(Move(0, 1));
-  env.PrintBoard();
+  
+  // create a Game object that contains the environment and two agents
+
+
   return 0;
 }

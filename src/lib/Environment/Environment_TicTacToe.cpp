@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "../Logging/Logger.hpp"
+
 Move::Move(uint row, uint column)
   : m_row(row)
   , m_column(column)
@@ -173,21 +175,42 @@ Player EnvironmentTicTacToe::GetWinner() const
   return Player::PLAYER_NONE;
 }
 
+torch::Tensor EnvironmentTicTacToe::BoardToInput() const
+{
+  torch::Tensor input;
+  // first plane is where player 1 has pieces
+  // second plane is where player 2 has pieces
+  // third plane shows which player's turn it is
+  input[0] = m_board.where(m_board == static_cast<int>(Player::PLAYER_X), 0);
+  input[1] = m_board.where(m_board == static_cast<int>(Player::PLAYER_O), 0);
+  input[2] = static_cast<int>(m_currentPlayer);
+  return input;
+}
+
 void EnvironmentTicTacToe::PrintBoard() const
 {
-  for (uint row = 0; row < m_board.size(0); ++row)
+  std::ostringstream oss;
+  oss << std::endl;
+  auto printDashes = [this, &oss]()
   {
-    std::cout << "| ";
     for (uint column = 0; column < m_board.size(1); ++column)
     {
-      std::cout << Player(m_board[row][column].item<int>());
-      if (column < m_board.size(1) - 1)
-      {
-        std::cout << " | ";
-      }
+      oss << "----";
     }
-    std::cout << std::endl;
+    oss << "-" << std::endl;
+  };
+
+  for (uint row = 0; row < m_board.size(0); ++row)
+  {
+    printDashes();
+    for (uint column = 0; column < m_board.size(1); ++column)
+    {
+      oss << "| " << Player(m_board[row][column].item<int>()) << " ";
+    }
+    oss << "|" << std::endl;
   }
+  printDashes();
+  LINFO << oss.str();
 }
 
 void EnvironmentTicTacToe::ResetEnvironment()
