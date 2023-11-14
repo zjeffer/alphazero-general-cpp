@@ -16,7 +16,7 @@ struct NetworkImpl : public torch::nn::Module
 {
   NetworkImpl(NetworkArchitecture const & na)
   {
-    convInput = register_module("convInput", ConvBlock(na.planes, na.filters));
+    convInput = register_module("convInput", ConvBlock(na.inputPlanes, na.filters));
 
     for (uint i = 0; i < na.residualBlocks; i++)
     {

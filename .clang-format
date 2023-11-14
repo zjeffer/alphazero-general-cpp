@@ -17,6 +17,7 @@ BinPackArguments: false
 BinPackParameters: false
 BreakBeforeBraces: Allman
 BreakBeforeInheritanceComma: true
+BreakBeforeBinaryOperators: All
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: BeforeColon
 BreakConstructorInitializersBeforeComma: true

@@ -5,9 +5,10 @@
 class Agent
 {
 private:
+  std::string   m_name;
   NeuralNetwork m_neuralNetwork;
 
 public:
-  Agent();
+  Agent(std::string name, NeuralNetwork const & neuralNetwork);
   ~Agent() = default;
 };

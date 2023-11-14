@@ -20,9 +20,10 @@ include_directories(${G3LOG_INCLUDE_DIRS})
 ###### main files ######
 file (GLOB PROJECT_SOURCES 
     ${PROJECT_SOURCE_DIR}/src/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/lib/Agent/*.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/Environment/*.cpp
-    ${PROJECT_SOURCE_DIR}/src/lib/NeuralNetwork/*.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/Logging/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/lib/NeuralNetwork/*.cpp
 )
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})

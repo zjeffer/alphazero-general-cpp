@@ -3,7 +3,7 @@
 #include <sys/types.h>
 struct NetworkArchitecture
 {
-  uint planes;         // the amount of input planes
+  uint inputPlanes;    // the amount of planes (channels) the input has
   uint width;          // the width of each plane
   uint height;         // the height of each plane
   uint outputs;        // the amount of policy outputs

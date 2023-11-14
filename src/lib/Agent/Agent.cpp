@@ -1,7 +1,9 @@
 #include "Agent.hpp"
 
-Agent::Agent()
-  : m_neuralNetwork()
+#include <utility>
+
+Agent::Agent(std::string name, NeuralNetwork const & neuralNetwork)
+  : m_name(std::move(name))
+  , m_neuralNetwork(neuralNetwork)
 {
-  
 }
