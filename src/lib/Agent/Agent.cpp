@@ -2,8 +2,13 @@
 
 #include <utility>
 
-Agent::Agent(std::string name, NeuralNetwork const & neuralNetwork)
+Agent::Agent(std::string name, NeuralNetwork & neuralNetwork)
   : m_name(std::move(name))
   , m_neuralNetwork(neuralNetwork)
 {
+}
+
+void Agent::RunSimulations(std::shared_ptr<MCTS> const & mcts, uint numSimulations)
+{
+  mcts->RunSimulations(numSimulations, m_neuralNetwork);
 }

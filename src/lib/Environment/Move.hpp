@@ -1,0 +1,17 @@
+#pragma once
+
+#include <sys/types.h>
+
+#include <utility>
+
+class Move
+{
+public:
+  virtual ~Move() = default;
+
+  virtual std::pair<uint, uint> GetCoordinates() const                      = 0;
+  virtual uint                  GetRow() const                              = 0;
+  virtual uint                  GetColumn() const                           = 0;
+  virtual float                 GetPriorProbability() const                 = 0;
+  virtual void                  SetPriorProbability(float priorProbability) = 0;
+};

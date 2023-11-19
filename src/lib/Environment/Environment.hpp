@@ -5,8 +5,14 @@
 
 #include <vector>
 
-enum class Player : uint;
-class Move;
+#include "Move.hpp"
+
+enum class Player : uint
+{
+  PLAYER_NONE = 0, // used for empty spaces
+  PLAYER_1,
+  PLAYER_2
+};
 
 class Environment
 {
@@ -21,8 +27,8 @@ public:
   virtual void UndoMove()                               = 0;
   virtual bool IsValidMove(uint row, uint column) const = 0;
 
-  [[nodiscard]] virtual std::vector<Move> GetValidMoves() const  = 0;
-  [[nodiscard]] virtual std::vector<Move> GetMoveHistory() const = 0;
+  [[nodiscard]] virtual std::vector<std::shared_ptr<Move>>         GetValidMoves() const  = 0;
+  [[nodiscard]] virtual std::vector<std::shared_ptr<Move>> const & GetMoveHistory() const = 0;
 
   virtual int GetRows() const    = 0;
   virtual int GetColumns() const = 0;
@@ -31,6 +37,8 @@ public:
 
   virtual torch::Tensor const & GetBoard()                            = 0;
   virtual void                  SetBoard(torch::Tensor const & board) = 0;
+
+  [[nodiscard]] virtual torch::Tensor BoardToInput() const = 0;
 
   virtual bool   IsTerminal() const = 0;
   virtual Player GetWinner() const  = 0;

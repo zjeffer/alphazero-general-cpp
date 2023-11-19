@@ -4,27 +4,6 @@
 
 #include "../Logging/Logger.hpp"
 
-Move::Move(uint row, uint column)
-  : m_row(row)
-  , m_column(column)
-{
-}
-
-std::pair<uint, uint> Move::GetCoordinates() const
-{
-  return std::make_pair(m_row, m_column);
-}
-
-uint Move::GetRow() const
-{
-  return m_row;
-}
-
-uint Move::GetColumn() const
-{
-  return m_column;
-}
-
 EnvironmentTicTacToe::EnvironmentTicTacToe()
   : m_board(torch::zeros({3, 3}))
 {
@@ -44,7 +23,7 @@ void EnvironmentTicTacToe::TogglePlayer()
 {
   if (m_currentPlayer == Player::PLAYER_NONE)
     return;
-  m_currentPlayer = (m_currentPlayer == Player::PLAYER_X) ? Player::PLAYER_O : Player::PLAYER_X;
+  m_currentPlayer = (m_currentPlayer == Player::PLAYER_1) ? Player::PLAYER_2 : Player::PLAYER_1;
 }
 
 void EnvironmentTicTacToe::MakeMove(Move move)
@@ -54,7 +33,7 @@ void EnvironmentTicTacToe::MakeMove(Move move)
     throw std::runtime_error("Invalid move.");
   }
   m_board[move.GetRow()][move.GetColumn()] = static_cast<int>(m_currentPlayer);
-  m_moveHistory.emplace_back(move);
+  m_moveHistory.emplace_back(std::make_unique<MoveTicTacToe>(move.GetRow(), move.GetColumn(), 0.0F));
   TogglePlayer();
 }
 
@@ -64,8 +43,8 @@ void EnvironmentTicTacToe::UndoMove()
   {
     throw std::runtime_error("Cannot undo move, move history is empty.");
   }
-  auto move                                = m_moveHistory.back();
-  m_board[move.GetRow()][move.GetColumn()] = static_cast<int>(Player::PLAYER_NONE);
+  auto * move                                = m_moveHistory.back().get();
+  m_board[move->GetRow()][move->GetColumn()] = static_cast<int>(Player::PLAYER_NONE);
   m_moveHistory.pop_back();
   TogglePlayer();
 }
@@ -75,23 +54,24 @@ bool EnvironmentTicTacToe::IsValidMove(uint row, uint column) const
   return static_cast<Player>(m_board[row][column].item<int>()) == Player::PLAYER_NONE;
 }
 
-std::vector<Move> EnvironmentTicTacToe::GetValidMoves() const
+std::vector<std::shared_ptr<Move>> EnvironmentTicTacToe::GetValidMoves() const
 {
-  std::vector<Move> validMoves;
+  std::vector<std::shared_ptr<Move>> validMoves;
   for (uint row = 0; row < m_board.size(0); ++row)
   {
     for (uint column = 0; column < m_board.size(1); ++column)
     {
       if (IsValidMove(row, column))
       {
-        validMoves.emplace_back(row, column);
+        // TODO: which prior probability should be used?
+        validMoves.emplace_back(std::make_shared<MoveTicTacToe>(row, column, 0.0F));
       }
     }
   }
   return validMoves;
 }
 
-std::vector<Move> EnvironmentTicTacToe::GetMoveHistory() const
+std::vector<std::shared_ptr<Move>> const & EnvironmentTicTacToe::GetMoveHistory() const
 {
   return m_moveHistory;
 }
@@ -181,8 +161,8 @@ torch::Tensor EnvironmentTicTacToe::BoardToInput() const
   // first plane is where player 1 has pieces
   // second plane is where player 2 has pieces
   // third plane shows which player's turn it is
-  input[0] = m_board.where(m_board == static_cast<int>(Player::PLAYER_X), 0);
-  input[1] = m_board.where(m_board == static_cast<int>(Player::PLAYER_O), 0);
+  input[0] = m_board.where(m_board == static_cast<int>(Player::PLAYER_1), 0);
+  input[1] = m_board.where(m_board == static_cast<int>(Player::PLAYER_2), 0);
   input[2] = static_cast<int>(m_currentPlayer);
   return input;
 }
@@ -225,10 +205,10 @@ std::ostream & operator<<(std::ostream & os, Player const & player)
   case Player::PLAYER_NONE:
     os << " ";
     break;
-  case Player::PLAYER_X:
+  case Player::PLAYER_1:
     os << "X";
     break;
-  case Player::PLAYER_O:
+  case Player::PLAYER_2:
     os << "O";
     break;
   }
@@ -245,11 +225,11 @@ std::istream & operator>>(std::istream & is, Player & player)
   }
   else if (input == "X")
   {
-    player = Player::PLAYER_X;
+    player = Player::PLAYER_1;
   }
   else if (input == "O")
   {
-    player = Player::PLAYER_O;
+    player = Player::PLAYER_2;
   }
   else
   {

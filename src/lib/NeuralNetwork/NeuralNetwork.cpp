@@ -17,9 +17,9 @@ Network NeuralNetwork::GetNetwork()
   return m_net;
 }
 
-std::pair<torch::Tensor, torch::Tensor> NeuralNetwork::Predict(torch::Tensor const & input)
+std::pair<torch::Tensor, torch::Tensor> NeuralNetwork::Predict(torch::Tensor & input)
 {
-  return m_net->forward(input);
+  return m_net->Forward(input);
 }
 
 bool NeuralNetwork::LoadModel(std::filesystem::path const & path)

@@ -1,0 +1,18 @@
+{
+	"C_Cpp.intelliSenseEngine": "disabled",
+	"C_Cpp.autocomplete": "disabled",
+	"C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: LLVM, UseTab: Always, IndentWidth: 2, TabWidth: 2}",
+	"clangd.arguments": [
+		"--log=verbose",
+		"--background-index",
+		"--compile-commands-dir=build",
+		"--query-driver=**",
+		"--clang-tidy",
+		"--all-scopes-completion",
+		"--completion-style=detailed",
+		"--header-insertion=never",
+		"--pch-storage=memory",
+		"--pretty"
+	],
+	"clangd.serverCompletionRanking": true,
+}

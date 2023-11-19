@@ -23,6 +23,7 @@ file (GLOB PROJECT_SOURCES
     ${PROJECT_SOURCE_DIR}/src/lib/Agent/*.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/Environment/*.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/Logging/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/lib/MCTS/*.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/NeuralNetwork/*.cpp
 )
 
@@ -37,28 +38,28 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${Python_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${Python_LIBRARIES})
 
 # set warnings
-target_compile_options(${PROJECT_NAME} PRIVATE 
-    -Wall -pedantic 
-    -pedantic-errors -Wextra -Wcast-align
-    -Wchar-subscripts  -Wcomment
-    -Wdisabled-optimization
-    # -Werror # = all warnings are errors 
-    -Wfloat-equal  -Wformat  -Wformat=2
-    -Wformat-nonliteral -Wformat-security 
-    -Wformat-y2k
-    -Wimport  -Winit-self  -Winline
-    -Winvalid-pch -Wlong-long
-    -Wmissing-field-initializers -Wmissing-format-attribute  
-    -Wmissing-noreturn
-    -Wpacked -Wparentheses  -Wpointer-arith
-    -Wredundant-decls -Wreturn-type
-    -Wsequence-point -Wsign-compare  -Wstack-protector
-    -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wtrigraphs  -Wuninitialized
-    -Wunknown-pragmas  -Wunreachable-code -Wunused
-    -Wunused-function  -Wunused-label  -Wunused-parameter
-    -Wunused-value  -Wunused-variable  -Wvariadic-macros
-    -Wshadow
-    -Wvolatile-register-var  -Wwrite-strings)
+# target_compile_options(${PROJECT_NAME} PRIVATE 
+#     -Wall -pedantic 
+#     -pedantic-errors -Wextra -Wcast-align
+#     -Wchar-subscripts  -Wcomment
+#     -Wdisabled-optimization
+#     # -Werror # = all warnings are errors 
+#     -Wfloat-equal  -Wformat  -Wformat=2
+#     -Wformat-nonliteral -Wformat-security 
+#     -Wformat-y2k
+#     -Wimport  -Winit-self  -Winline
+#     -Winvalid-pch -Wlong-long
+#     -Wmissing-field-initializers -Wmissing-format-attribute  
+#     -Wmissing-noreturn
+#     -Wpacked -Wparentheses  -Wpointer-arith
+#     -Wredundant-decls -Wreturn-type
+#     -Wsequence-point -Wsign-compare  -Wstack-protector
+#     -Wstrict-aliasing -Wstrict-aliasing=2 -Wswitch -Wtrigraphs  -Wuninitialized
+#     -Wunknown-pragmas  -Wunreachable-code -Wunused
+#     -Wunused-function  -Wunused-label  -Wunused-parameter
+#     -Wunused-value  -Wunused-variable  -Wvariadic-macros
+#     -Wshadow
+#     -Wvolatile-register-var  -Wwrite-strings)
 
 # set c++ standard
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23)

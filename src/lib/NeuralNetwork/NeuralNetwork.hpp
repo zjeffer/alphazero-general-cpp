@@ -19,10 +19,7 @@ public:
 
   Network GetNetwork();
 
-  static torch::Tensor BoardToInput(torch::Tensor const & board, Player player, int inputPlanes);
-  torch::Tensor        BoardToInput(std::shared_ptr<Environment> const & env);
-
-  std::pair<torch::Tensor, torch::Tensor> Predict(torch::Tensor const & input);
+  std::pair<torch::Tensor, torch::Tensor> Predict(torch::Tensor & input);
 
   bool                  LoadModel(std::filesystem::path const & path);
   std::filesystem::path SaveModel(std::filesystem::path const & path);

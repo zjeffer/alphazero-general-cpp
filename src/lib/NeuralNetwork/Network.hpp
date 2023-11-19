@@ -27,7 +27,7 @@ struct NetworkImpl : public torch::nn::Module
     policyHead = register_module("policyHead", PolicyHead(na.filters, na.policyFilters, na.width, na.height, na.outputs));
   }
 
-  std::pair<torch::Tensor, torch::Tensor> forward(torch::Tensor const & input)
+  std::pair<torch::Tensor, torch::Tensor> Forward(torch::Tensor & input)
   {
     // the first convolutional layer
     auto x = convInput(input);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../MCTS/MCTS.hpp"
 #include "../NeuralNetwork/NeuralNetwork.hpp"
 
 class Agent
@@ -9,6 +10,8 @@ private:
   NeuralNetwork m_neuralNetwork;
 
 public:
-  Agent(std::string name, NeuralNetwork const & neuralNetwork);
+  Agent(std::string name, NeuralNetwork & neuralNetwork);
   ~Agent() = default;
+
+  void RunSimulations(std::shared_ptr<MCTS> const & mcts, uint numSimulations);
 };
