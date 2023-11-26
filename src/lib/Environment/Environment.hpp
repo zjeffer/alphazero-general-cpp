@@ -23,7 +23,7 @@ public:
   virtual void   SetCurrentPlayer(Player player) = 0;
   virtual void   TogglePlayer()                  = 0;
 
-  virtual void MakeMove(Move move)                      = 0;
+  virtual void MakeMove(Move const & move)              = 0;
   virtual void UndoMove()                               = 0;
   virtual bool IsValidMove(uint row, uint column) const = 0;
 

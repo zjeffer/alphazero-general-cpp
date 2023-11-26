@@ -2,6 +2,7 @@
 
 #include <sys/types.h>
 
+#include <string>
 #include <utility>
 
 class Move
@@ -14,4 +15,5 @@ public:
   virtual uint                  GetColumn() const                           = 0;
   virtual float                 GetPriorProbability() const                 = 0;
   virtual void                  SetPriorProbability(float priorProbability) = 0;
+  virtual std::string           ToString() const                            = 0;
 };

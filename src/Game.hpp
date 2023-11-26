@@ -7,10 +7,10 @@
 
 struct GameOptions
 {
-  bool saveMemory;
-  uint maxMoves;
-  uint simsPerMove;
-  bool stochasticSearch = true;
+  bool saveMemory;              // if true, save the memory to a file after each game
+  uint maxMoves;                // the maximum amount of moves in a game
+  uint simsPerMove;             // the amount of MCTS simulations per move
+  bool stochasticSearch = true; // if true, don't play the best move but use a stochastic distribution to select a move based on the visit counts
 };
 
 class Game

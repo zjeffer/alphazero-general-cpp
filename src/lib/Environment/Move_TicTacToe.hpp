@@ -18,4 +18,5 @@ public:
   uint                  GetColumn() const override;
   float                 GetPriorProbability() const override;
   void                  SetPriorProbability(float priorProbability) override;
+  std::string           ToString() const override;
 };

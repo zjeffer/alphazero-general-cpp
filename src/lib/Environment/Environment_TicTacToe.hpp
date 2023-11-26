@@ -23,7 +23,7 @@ public:
   void   SetCurrentPlayer(Player player) override;
   void   TogglePlayer() override;
 
-  void MakeMove(Move move) override;
+  void MakeMove(Move const & move) override;
   void UndoMove() override;
   bool IsValidMove(uint row, uint column) const override;
 

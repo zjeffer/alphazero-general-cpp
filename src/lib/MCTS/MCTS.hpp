@@ -18,6 +18,8 @@ public:
   void   RunSimulations(uint numSimulations, NeuralNetwork & network);
   Node * GetRoot() const;
 
+  Move const & GetBestMove(bool stochasticSearch) const;
+
 private:
   Node * Select(Node * root);
   float  Expand(Node * node, NeuralNetwork & network); // also does step 3: evaluation

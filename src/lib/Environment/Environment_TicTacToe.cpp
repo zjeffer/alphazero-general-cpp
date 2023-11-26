@@ -26,14 +26,14 @@ void EnvironmentTicTacToe::TogglePlayer()
   m_currentPlayer = (m_currentPlayer == Player::PLAYER_1) ? Player::PLAYER_2 : Player::PLAYER_1;
 }
 
-void EnvironmentTicTacToe::MakeMove(Move move)
+void EnvironmentTicTacToe::MakeMove(Move const & move)
 {
   if (!IsValidMove(move.GetRow(), move.GetColumn()))
   {
-    throw std::runtime_error("Invalid move.");
+    throw std::runtime_error("Invalid move: " + move.ToString());
   }
   m_board[move.GetRow()][move.GetColumn()] = static_cast<int>(m_currentPlayer);
-  m_moveHistory.emplace_back(std::make_unique<MoveTicTacToe>(move.GetRow(), move.GetColumn(), 0.0F));
+  m_moveHistory.emplace_back(std::move(std::make_shared<MoveTicTacToe>(move.GetRow(), move.GetColumn(), 0.0F)));
   TogglePlayer();
 }
 
@@ -63,7 +63,7 @@ std::vector<std::shared_ptr<Move>> EnvironmentTicTacToe::GetValidMoves() const
     {
       if (IsValidMove(row, column))
       {
-        // TODO: which prior probability should be used?
+        // TODO: which prior probability should be used at construction?
         validMoves.emplace_back(std::make_shared<MoveTicTacToe>(row, column, 0.0F));
       }
     }
@@ -157,14 +157,14 @@ Player EnvironmentTicTacToe::GetWinner() const
 
 torch::Tensor EnvironmentTicTacToe::BoardToInput() const
 {
-  torch::Tensor input;
+  torch::Tensor input = torch::zeros({m_board.size(0), m_board.size(1), m_board.size(1)});
   // first plane is where player 1 has pieces
   // second plane is where player 2 has pieces
   // third plane shows which player's turn it is
   input[0] = m_board.where(m_board == static_cast<int>(Player::PLAYER_1), 0);
   input[1] = m_board.where(m_board == static_cast<int>(Player::PLAYER_2), 0);
   input[2] = static_cast<int>(m_currentPlayer);
-  return input;
+  return input.unsqueeze(0);
 }
 
 void EnvironmentTicTacToe::PrintBoard() const

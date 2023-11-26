@@ -4,28 +4,33 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 
+struct PolicyHeadOptions
+{
+  uint inputFilters;  // The amount of input filters. Must be equal to the previous layer's output filters.
+  uint policyFilters; // The amount of filters in the hidden layers.
+  uint width;         // The width of each plane.
+  uint height;        // The height of each plane.
+  uint outputs;       // The amount of outputs in the output layer
+  uint kernelSize;    // The kernel size of the convolutional layers.
+  uint padding;       // The padding of the convolutional layers.
+  uint stride;        // The stride of the convolutional layers.
+};
+
 /**
  * @brief The policy output architecture of the AlphaZero network
  *
  */
 struct PolicyHeadImpl : public torch::nn::Module
 {
-  /**
-   * @brief Construct a new policy head
-   *
-   * @param inputFilters The amount of input filters. Must be equal to the previous layer's output filters.
-   * @param policyFilters The amount of filters in the hidden layers.
-   * @param width The width of each plane.
-   * @param height The height of each plane.
-   * @param outputs The amount of outputs in the output layer
-   */
-  PolicyHeadImpl(int inputFilters, int policyFilters, int width, int height, int outputs)
+  PolicyHeadImpl(PolicyHeadOptions const & options)
   {
-    int policyArraySize = width * height * policyFilters;
+    int policyArraySize = options.width * options.height * options.policyFilters;
 
-    m_convPolicy      = register_module("convPolicy", torch::nn::Conv2d(torch::nn::Conv2dOptions(inputFilters, policyFilters, 1).stride(1)));
-    m_batchNormPolicy = register_module("batchNormPolicy", torch::nn::BatchNorm2d(policyFilters));
-    m_linearPolicy    = register_module("linearPolicy", torch::nn::Linear(policyArraySize, outputs));
+    m_convPolicy = register_module(
+      "convPolicy",
+      torch::nn::Conv2d(torch::nn::Conv2dOptions(options.inputFilters, options.policyFilters, options.kernelSize).stride(options.stride)));
+    m_batchNormPolicy = register_module("batchNormPolicy", torch::nn::BatchNorm2d(options.policyFilters));
+    m_linearPolicy    = register_module("linearPolicy", torch::nn::Linear(policyArraySize, options.outputs));
   }
 
   /**
@@ -39,19 +44,20 @@ struct PolicyHeadImpl : public torch::nn::Module
     int64_t batchSize = input.size(0);
 
     // conv block
-    auto pol = m_convPolicy(input);
-    pol      = m_batchNormPolicy(pol);
-    pol      = torch::relu(pol);
+    auto policyHead = m_convPolicy(input);
+    policyHead      = m_batchNormPolicy(policyHead);
+    policyHead      = torch::relu(policyHead);
 
     // flatten
-    pol = pol.view({batchSize, -1});
+    policyHead = policyHead.view({batchSize, -1});
 
     // linear
-    pol = m_linearPolicy(pol);
+    policyHead = m_linearPolicy(policyHead);
 
     // softmax activation
-    pol = torch::softmax(pol, 1);
-    return pol;
+    policyHead = torch::softmax(policyHead, 1);
+
+    return policyHead;
   }
 
 private:

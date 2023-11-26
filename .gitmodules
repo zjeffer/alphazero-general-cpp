@@ -1,3 +1,6 @@
 [submodule "vendor/g3log"]
 	path = vendor/g3log
 	url = git@github.com:KjellKod/g3log.git
+[submodule "vendor/googletest"]
+	path = vendor/googletest
+	url = https://github.com/google/googletest.git

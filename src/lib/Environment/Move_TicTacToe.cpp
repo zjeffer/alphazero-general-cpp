@@ -31,3 +31,8 @@ void MoveTicTacToe::SetPriorProbability(float priorProbability)
 {
   m_priorProbability = priorProbability;
 }
+
+std::string MoveTicTacToe::ToString() const
+{
+  return std::to_string(m_row) + ", " + std::to_string(m_column);
+}

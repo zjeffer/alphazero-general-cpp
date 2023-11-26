@@ -32,6 +32,36 @@ Node * MCTS::GetRoot() const
   return m_root.get();
 }
 
+Move const & MCTS::GetBestMove(bool stochasticSearch) const
+{
+  // get the best move from the root node
+  // if stochasticSearch is true, use the visit counts as probabilities
+  // if stochasticSearch is false, use the highest visit count
+  auto const & children = GetRoot()->GetChildren();
+  if (children.empty())
+  {
+    throw std::runtime_error("No children found");
+  }
+  if (stochasticSearch)
+  {
+    // TODO
+    throw std::runtime_error("Stochastic search not yet implemented");
+  }
+
+  // find the child with the highest visit count
+  auto bestChild = std::max_element(                                                           //
+    children.begin(),                                                                          //
+    children.end(),                                                                            //
+    [](auto const & c1, auto const & c2) { return c1->GetVisitCount() < c2->GetVisitCount(); } //
+  );
+
+  if (bestChild == children.end())
+  {
+    throw std::runtime_error("No best child found");
+  }
+  return (*bestChild)->GetMove();
+}
+
 Node * MCTS::Select(Node * root)
 {
   // select nodes until we reach a leaf node (= a node that has not been expanded yet)
@@ -73,7 +103,7 @@ float MCTS::Expand(Node * node, NeuralNetwork & network)
     // get the prior from the policy output
     move->SetPriorProbability(policyOutput[move->GetRow()][move->GetColumn()].item<float>());
     // add a new node to the current node with this prior
-    node->AddChild(std::make_unique<Node>(node->GetEnvironment(), move));
+    node->AddChild(std::make_unique<Node>(node->GetEnvironment(), std::move(std::make_shared<Node>(node)), move));
   }
   // 4. return the value output
   return valueOutput.view(1).item<float>();
