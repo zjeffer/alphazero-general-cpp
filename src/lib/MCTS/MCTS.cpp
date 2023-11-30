@@ -19,11 +19,10 @@ void MCTS::RunSimulations(uint numSimulations, NeuralNetwork & network)
     bar.progress(i, numSimulations);
     // 1. select
     Node * node = Select(root);
-    // 2. expand
+    // 2. expand and 3. evaluate
     float result = Expand(node, network);
-    // 3. evaluate
-    (void)result;
     // 4. backpropagate
+    Backpropagate(node, result);
   }
 }
 
@@ -107,4 +106,19 @@ float MCTS::Expand(Node * node, NeuralNetwork & network)
   }
   // 4. return the value output
   return valueOutput.view(1).item<float>();
+}
+
+void MCTS::Backpropagate(Node * node, float reward)
+{
+  // starting from the given leaf node, go up the tree and update the visit counts and values
+  while (node->GetParent() != nullptr)
+  {
+    node->IncrementVisitCount();
+    switch (node->GetEnvironment()->GetCurrentPlayer())
+    {
+      // TODO
+    }
+    // get parent
+    node = node->GetParent().get();
+  }
 }

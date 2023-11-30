@@ -1,5 +1,14 @@
 #include "Node.hpp"
 
+#include <cmath>
+
+namespace
+{
+auto constexpr PB_C_BASE = 19652.0F;
+auto constexpr PB_C_INIT = 1.25F;
+auto constexpr C_PUCT    = 1.25F; // PUCT constant: higher -> more exploration, lower -> more exploitation
+} // namespace
+
 Node::Node(std::shared_ptr<Environment> environment, std::shared_ptr<Node> parent, std::shared_ptr<Move> move)
   : m_environment(std::move(environment))
   , m_parent(std::move(parent))
@@ -72,12 +81,27 @@ void Node::SetPriorProbability(float priorProbability)
 
 float Node::GetQValue() const
 {
-  // TODO
-  return 0.0F;
+  return m_value / ((float)GetVisitCount() + 1e-3);
 }
 
 float Node::GetUValue() const
 {
-  // TODO
-  return 0.0F;
+  if (m_parent == nullptr)
+  {
+    throw std::runtime_error("Parent is null. This shouldn't happen unless you call this function on the root node.");
+  }
+  // uses the PUCT formula based on AlphaZero's paper and pseudocode
+  float expRate = std::log((m_parent->GetVisitCount() + PB_C_BASE + 1.0F) / PB_C_BASE) + PB_C_INIT;
+  expRate *= std::sqrt((float)m_parent->GetVisitCount()) / ((float)GetVisitCount() + 1.0F);
+  return C_PUCT * expRate * m_priorProbability;
+}
+
+float Node::GetValue() const
+{
+  return m_value;
+}
+
+void Node::SetValue(float value)
+{
+  m_value = value;
 }
