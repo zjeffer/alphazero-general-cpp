@@ -2,7 +2,7 @@
 
 #include <utility>
 
-Agent::Agent(std::string name, NeuralNetwork & neuralNetwork)
+Agent::Agent(std::string name, NeuralNetworkInterface & neuralNetwork)
   : m_name(std::move(name))
   , m_neuralNetwork(neuralNetwork)
 {

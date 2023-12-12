@@ -29,6 +29,8 @@ struct NetworkArchitecture
  */
 struct NetworkImpl : public torch::nn::Module
 {
+  NetworkImpl() = default; // necessary for gmock.
+
   NetworkImpl(NetworkArchitecture const & na)
   {
     auto convBlockOptions = ConvBlockOptions{

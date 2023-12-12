@@ -2,14 +2,22 @@
 
 #include "../Logging/Logger.hpp"
 
-NeuralNetwork::NeuralNetwork(NetworkArchitecture const & architecture)
+NeuralNetwork::NeuralNetwork()
   : m_device(torch::Device(torch::kCPU))
 {
-  if (torch::cuda::is_available())
-  {
-    m_device = torch::Device(torch::kCUDA);
-  }
+  InitializeCuda();
+}
+
+NeuralNetwork::NeuralNetwork(NetworkArchitecture const & architecture)
+  : NeuralNetwork()
+{
   m_net = Network(architecture);
+}
+
+NeuralNetwork::NeuralNetwork(std::filesystem::path const & path)
+  : NeuralNetwork()
+{
+  LoadModel(path);
 }
 
 Network NeuralNetwork::GetNetwork()
@@ -48,4 +56,23 @@ std::filesystem::path NeuralNetwork::SaveModel(std::filesystem::path const & pat
     throw;
   }
   return path;
+}
+
+void NeuralNetwork::InitializeCuda()
+{
+  if (torch::cuda::is_available())
+  {
+    try
+    {
+      m_device = torch::Device(torch::kCUDA);
+    }
+    catch (std::exception const & e)
+    {
+      LWARN << "Error initializing CUDA: " << e.what();
+    }
+  }
+  else
+  {
+    LWARN << "CUDA is not available. Using CPU instead.";
+  }
 }
