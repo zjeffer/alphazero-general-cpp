@@ -5,18 +5,9 @@
 #include "../../src/lib/NeuralNetwork/NeuralNetwork.hpp"
 #include "../../src/lib/Utilities/Functions.hpp"
 #include "../../src/lib/Utilities/RandomGenerator.hpp"
+#include "../Fixtures/fixture_RandomGenerator.hpp"
 
 std::mt19937 RandomGenerator::generator(std::random_device{}());
-
-struct RandomGeneratorFixture : public ::testing::Test
-{
-  RandomGeneratorFixture()
-  {
-    RandomGenerator::ResetSeed();
-  }
-
-  ~RandomGeneratorFixture() override = default;
-};
 
 TEST_F(RandomGeneratorFixture, GenerateGamma_CheckRange)
 {
@@ -33,8 +24,8 @@ TEST_F(RandomGeneratorFixture, DirichletNoise)
   // TODO: extract the creation of the environment and initial MCTS tree (with children) to a fixture
 
   // set up new tree with 1 root node and all its children
-  auto   env  = std::make_shared<EnvironmentTicTacToe>();
-  Node * root = new Node(env);
+  auto env  = std::make_shared<EnvironmentTicTacToe>();
+  Node root = Node(env);
 
   auto ticTacToeArchitecture = NetworkArchitecture{
     .inputPlanes            = 3,  // 3 planes: 1 for X, 1 for 0, 1 for current player
@@ -53,40 +44,64 @@ TEST_F(RandomGeneratorFixture, DirichletNoise)
   };
   NeuralNetwork network = NeuralNetwork(ticTacToeArchitecture);
 
-  auto input                       = root->GetEnvironment()->BoardToInput();
+  auto input                       = root.GetEnvironment()->BoardToInput();
   auto [policyOutput, valueOutput] = network.Predict(input);
   policyOutput                     = policyOutput.view({3, 3});
 
-  auto moves = root->GetEnvironment()->GetValidMoves();
+  auto moves = root.GetEnvironment()->GetValidMoves();
   ASSERT_FALSE(moves.empty()) << "There are no valid moves";
+
+  // for this test, make the prior probability of the first move 0.0
+  moves[0]->SetPriorProbability(0.0F);
+
   for (auto const & move: moves)
   {
     move->SetPriorProbability(policyOutput[move->GetRow()][move->GetColumn()].item<float>());
     auto newEnv = std::make_shared<EnvironmentTicTacToe>(*env);
     newEnv->MakeMove(*move);
-    root->AddChild(std::make_unique<Node>(newEnv, move));
+    root.AddChild(std::make_shared<Node>(newEnv, std::make_shared<Node>(root), move));
   }
 
   float sumBeforeDirichletNoise = 0.0F;
-  for (auto const & child: root->GetChildren())
+  for (auto const & child: root.GetChildren())
   {
     sumBeforeDirichletNoise += child->GetPriorProbability();
   }
+  ASSERT_NE(sumBeforeDirichletNoise, 0.0F);
 
-  float firstChildProbabilityBeforeDirichletNoise = root->GetChildren()[0]->GetPriorProbability();
-
-  utils::AddDirichletNoise(root);
+  utils::AddDirichletNoise(&root);
 
   // check that the sum of the noise vector is the same
   float sumAfterDirichletNoise = 0.0F;
-  for (auto const & child: root->GetChildren())
+  for (auto const & child: root.GetChildren())
   {
     sumAfterDirichletNoise += child->GetPriorProbability();
   }
 
-  float firstChildProbabilityAfterDirichletNoise = root->GetChildren()[0]->GetPriorProbability();
-
   ASSERT_FLOAT_EQ(sumBeforeDirichletNoise, sumAfterDirichletNoise);
-  ASSERT_NE(sumBeforeDirichletNoise, 0.0F);
-  ASSERT_NE(firstChildProbabilityBeforeDirichletNoise, firstChildProbabilityAfterDirichletNoise);
+
+  for (auto const & child: root.GetChildren())
+  {
+    ASSERT_GT(child->GetPriorProbability(), 0.0F);
+  }
+}
+
+TEST_F(RandomGeneratorFixture, StochasticSample)
+{
+  const uint         sampleTimes = 10000;
+  std::vector<float> probabilities{0.90F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F, 0.01F};
+
+  // sample
+  std::vector<int> counts(11, 0);
+  for (int i = 0; i < sampleTimes; i++)
+  {
+    int index = RandomGenerator::StochasticSample(probabilities);
+    counts[index]++;
+  }
+
+  // based on the probabilities, the counts should be roughly the same as the probabilities * sampleTimes, with a small tolerance
+  for (int i = 0; i < counts.size(); i++)
+  {
+    ASSERT_NEAR(counts[i], probabilities[i] * sampleTimes, 0.05F * sampleTimes);
+  }
 }
