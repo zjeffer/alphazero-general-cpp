@@ -13,14 +13,12 @@ Node::Node(std::shared_ptr<Environment> environment, std::shared_ptr<Node> paren
   : m_environment(std::move(environment))
   , m_parent(std::move(parent))
   , m_move(std::move(move))
-  , m_priorProbability(m_move->GetPriorProbability())
 {
 }
 
 Node::Node(std::shared_ptr<Environment> environment)
   : m_environment(std::move(environment))
   , m_move(nullptr)
-  , m_priorProbability(0.0F)
 {
   // constructor for root node
 }
@@ -30,13 +28,14 @@ std::shared_ptr<Environment> const & Node::GetEnvironment() const
   return m_environment;
 }
 
-Move const & Node::GetMove() const
+std::shared_ptr<Node> const & Node::GetParent() const
 {
-  if (m_move == nullptr)
-  {
-    throw std::runtime_error("Move is null");
-  }
-  return *m_move;
+  return m_parent;
+}
+
+std::shared_ptr<Move> Node::GetMove() const
+{
+  return m_move;
 }
 
 bool Node::IsLeaf() const
@@ -44,12 +43,12 @@ bool Node::IsLeaf() const
   return m_children.empty();
 }
 
-std::vector<std::unique_ptr<Node>> const & Node::GetChildren() const
+std::vector<std::shared_ptr<Node>> const & Node::GetChildren() const
 {
   return m_children;
 }
 
-void Node::AddChild(std::unique_ptr<Node> child)
+void Node::AddChild(std::shared_ptr<Node> child)
 {
   m_children.emplace_back(std::move(child));
 }
@@ -71,12 +70,12 @@ void Node::IncrementVisitCount()
 
 float Node::GetPriorProbability() const
 {
-  return m_priorProbability;
+  return m_move->GetPriorProbability();
 }
 
 void Node::SetPriorProbability(float priorProbability)
 {
-  m_priorProbability = priorProbability;
+  m_move->SetPriorProbability(priorProbability);
 }
 
 float Node::GetQValue() const
@@ -93,7 +92,7 @@ float Node::GetUValue() const
   // uses the PUCT formula based on AlphaZero's paper and pseudocode
   float expRate = std::log((m_parent->GetVisitCount() + PB_C_BASE + 1.0F) / PB_C_BASE) + PB_C_INIT;
   expRate *= std::sqrt((float)m_parent->GetVisitCount()) / ((float)GetVisitCount() + 1.0F);
-  return C_PUCT * expRate * m_priorProbability;
+  return C_PUCT * expRate * GetPriorProbability();
 }
 
 float Node::GetValue() const

@@ -3,6 +3,7 @@
 #include "Game.hpp"
 #include "lib/Environment/Environment_TicTacToe.hpp"
 #include "lib/Logging/Logger.hpp"
+#include "lib/NeuralNetwork/NeuralNetwork.hpp"
 #include "lib/Utilities/RandomGenerator.hpp"
 
 Logger logger;
@@ -42,7 +43,7 @@ int main()
   auto gameOptions = GameOptions{
     .saveMemory       = true,
     .maxMoves         = 9,
-    .simsPerMove      = 100,
+    .simsPerMove      = 200,
     .stochasticSearch = true,
   };
   Game game = Game(std::make_unique<EnvironmentTicTacToe>(), std::move(agent1), std::move(agent2), gameOptions);
