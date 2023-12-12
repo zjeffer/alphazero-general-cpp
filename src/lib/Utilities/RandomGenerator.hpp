@@ -28,6 +28,14 @@ public:
     return distribution(generator);
   }
 
+  // sample stochastically
+  static size_t StochasticSample(std::vector<float> const & probabilities)
+  {
+    ResetSeed();
+    std::discrete_distribution<size_t> distribution(probabilities.begin(), probabilities.end());
+    return distribution(generator);
+  }
+
 private:
   std::gamma_distribution<float> m_gammaDistribution;
 };
