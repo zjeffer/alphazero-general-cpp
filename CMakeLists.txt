@@ -26,6 +26,7 @@ include_directories(${G3LOG_INCLUDE_DIRS})
 file (GLOB PROJECT_SOURCES
     ${PROJECT_SOURCE_DIR}/src/Game.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/Agent/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/lib/DataManager/*.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/Environment/*.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/Logging/*.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/MCTS/*.cpp
@@ -38,13 +39,13 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/src/main.cpp ${PROJECT_SOUR
 # link libraries (torch, g3log)
 target_link_libraries(${PROJECT_NAME} ${TORCH_LIBRARIES} g3log)
 
-# link gtest
+# set up testing
 file (GLOB TEST_SOURCES
     ${PROJECT_SOURCE_DIR}/test/main.cpp
     ${PROJECT_SOURCE_DIR}/test/Tests/*.cpp
 )
 add_executable(${PROJECT_NAME}_test ${PROJECT_SOURCES} ${TEST_SOURCES})
-target_link_libraries(${PROJECT_NAME}_test gtest_main ${TORCH_LIBRARIES} g3log)
+target_link_libraries(${PROJECT_NAME}_test gtest_main gmock ${TORCH_LIBRARIES} g3log)
 
 # python
 find_package(Python REQUIRED COMPONENTS Development)
@@ -53,3 +54,4 @@ target_link_libraries(${PROJECT_NAME} ${Python_LIBRARIES})
 
 # set c++ standard
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 23)
+set_target_properties(${PROJECT_NAME}_test PROPERTIES CXX_STANDARD 23)
