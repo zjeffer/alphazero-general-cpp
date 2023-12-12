@@ -7,17 +7,23 @@
 
 #include "Move.hpp"
 
-enum class Player : uint
+enum class Player : uint8_t
 {
   PLAYER_NONE = 0, // used for empty spaces
   PLAYER_1,
   PLAYER_2
 };
 
+// stream operators for Player
+std::ostream & operator<<(std::ostream & os, Player const & player);
+std::istream & operator>>(std::istream & is, Player & player);
+
 class Environment
 {
 public:
   virtual ~Environment() = default;
+
+  [[nodiscard]] virtual std::unique_ptr<Environment> Clone() const = 0;
 
   virtual Player GetCurrentPlayer() const        = 0;
   virtual void   SetCurrentPlayer(Player player) = 0;
@@ -35,8 +41,8 @@ public:
 
   virtual Player GetPlayerAtCoordinates(uint row, uint column) const = 0;
 
-  virtual torch::Tensor const & GetBoard()                            = 0;
-  virtual void                  SetBoard(torch::Tensor const & board) = 0;
+  virtual torch::Tensor const & GetBoard() const                                            = 0;
+  virtual void                  SetBoard(torch::Tensor const & board, Player currentPlayer) = 0;
 
   [[nodiscard]] virtual torch::Tensor BoardToInput() const = 0;
 
@@ -46,4 +52,6 @@ public:
   virtual void PrintBoard() const = 0;
 
   virtual void ResetEnvironment() = 0;
+
+  virtual std::string PlayerToString(Player player) const = 0;
 };

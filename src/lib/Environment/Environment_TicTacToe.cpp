@@ -4,9 +4,28 @@
 
 #include "../Logging/Logger.hpp"
 
-EnvironmentTicTacToe::EnvironmentTicTacToe()
-  : m_board(torch::zeros({3, 3}))
+namespace
 {
+auto constexpr BOARD_SIZE_ROWS = 3;
+auto constexpr BOARD_SIZE_COLS = 3;
+auto constexpr INPUT_PLANES    = 3; // 3 planes of rows * columns: player 1, player 2, current player
+} // namespace
+
+EnvironmentTicTacToe::EnvironmentTicTacToe()
+  : m_board(torch::zeros({BOARD_SIZE_ROWS, BOARD_SIZE_COLS}))
+{
+}
+
+EnvironmentTicTacToe::EnvironmentTicTacToe(EnvironmentTicTacToe const & other)
+  : m_board(other.GetBoard().clone()) // clone the board because otherwise it will be a reference to the original board
+  , m_moveHistory(other.GetMoveHistory())
+  , m_currentPlayer(other.GetCurrentPlayer())
+{
+}
+
+std::unique_ptr<Environment> EnvironmentTicTacToe::Clone() const
+{
+  return std::make_unique<EnvironmentTicTacToe>(EnvironmentTicTacToe(*this));
 }
 
 Player EnvironmentTicTacToe::GetCurrentPlayer() const
@@ -91,29 +110,29 @@ Player EnvironmentTicTacToe::GetPlayerAtCoordinates(uint row, uint column) const
   return static_cast<Player>(m_board[row][column].item<int>());
 }
 
-torch::Tensor const & EnvironmentTicTacToe::GetBoard()
+torch::Tensor const & EnvironmentTicTacToe::GetBoard() const
 {
   return m_board;
 }
 
-void EnvironmentTicTacToe::SetBoard(torch::Tensor const & board)
+void EnvironmentTicTacToe::SetBoard(torch::Tensor const & board, Player currentPlayer)
 {
   m_board = board;
+  m_moveHistory.clear();
+  SetCurrentPlayer(currentPlayer);
 }
 
 bool EnvironmentTicTacToe::IsTerminal() const
 {
   // the game is terminal if:
   // - at least one player has three in a row
-  // - the board is full and no player has three in a row
+  // - or the board is full
 
   if (GetWinner() != Player::PLAYER_NONE)
   {
     return true;
   }
-  // return true if any cell contains PLAYER_NONE
-  auto player = static_cast<int>(Player::PLAYER_NONE);
-  return torch::any(m_board == player).item<bool>();
+  return BoardIsFull();
 }
 
 Player EnvironmentTicTacToe::GetWinner() const
@@ -121,7 +140,7 @@ Player EnvironmentTicTacToe::GetWinner() const
   // the winner is the player with three in a row
   // if there is no winner (yet), return PLAYER_NONE
 
-  // check rows
+  // check horizontal win
   for (uint row = 0; row < m_board.size(0); ++row)
   {
     auto cellsInRow = m_board[row];
@@ -130,16 +149,16 @@ Player EnvironmentTicTacToe::GetWinner() const
       return static_cast<Player>(cellsInRow[0].item<int>());
     }
   }
-  // check columns
+  // check vertical win
   for (uint column = 0; column < m_board.size(1); ++column)
   {
-    auto cellsInColumn = m_board[0][column];
+    auto cellsInColumn = m_board.transpose(0, 1)[column];
     if (cellsInColumn[0].equal(cellsInColumn[1]) && cellsInColumn[1].equal(cellsInColumn[2]))
     {
       return static_cast<Player>(cellsInColumn[0].item<int>());
     }
   }
-  // check diagonals
+  // check diagonal win
   auto cellToCheck = m_board[1][1]; // middle cell
   if (static_cast<Player>(cellToCheck.item<int>()) != Player::PLAYER_NONE)
   {
@@ -157,18 +176,19 @@ Player EnvironmentTicTacToe::GetWinner() const
 
 torch::Tensor EnvironmentTicTacToe::BoardToInput() const
 {
-  torch::Tensor input = torch::zeros({m_board.size(0), m_board.size(1), m_board.size(1)});
+  torch::Tensor input = torch::zeros({INPUT_PLANES, m_board.size(0), m_board.size(1)});
   // first plane is where player 1 has pieces
   // second plane is where player 2 has pieces
   // third plane shows which player's turn it is
   input[0] = m_board.where(m_board == static_cast<int>(Player::PLAYER_1), 0);
   input[1] = m_board.where(m_board == static_cast<int>(Player::PLAYER_2), 0);
-  input[2] = static_cast<int>(m_currentPlayer);
+  input[2] = torch::full({m_board.size(0), m_board.size(1)}, static_cast<int>(m_currentPlayer));
   return input.unsqueeze(0);
 }
 
 void EnvironmentTicTacToe::PrintBoard() const
 {
+  LINFO << "Current player: " << PlayerToString(m_currentPlayer);
   std::ostringstream oss;
   oss << std::endl;
   auto printDashes = [this, &oss]()
@@ -185,7 +205,7 @@ void EnvironmentTicTacToe::PrintBoard() const
     printDashes();
     for (uint column = 0; column < m_board.size(1); ++column)
     {
-      oss << "| " << Player(m_board[row][column].item<int>()) << " ";
+      oss << "| " << PlayerToString(static_cast<Player>(m_board[row][column].item<int>())) << " ";
     }
     oss << "|" << std::endl;
   }
@@ -196,44 +216,25 @@ void EnvironmentTicTacToe::PrintBoard() const
 void EnvironmentTicTacToe::ResetEnvironment()
 {
   m_board = torch::zeros({m_board.size(0), m_board.size(1)});
+  m_moveHistory.clear();
 }
 
-std::ostream & operator<<(std::ostream & os, Player const & player)
+std::string EnvironmentTicTacToe::PlayerToString(Player player) const
 {
   switch (player)
   {
   case Player::PLAYER_NONE:
-    os << " ";
-    break;
+    return " ";
   case Player::PLAYER_1:
-    os << "X";
-    break;
+    return "X";
   case Player::PLAYER_2:
-    os << "O";
-    break;
+    return "O";
   }
-  return os;
+  throw std::runtime_error("Invalid player");
 }
 
-std::istream & operator>>(std::istream & is, Player & player)
+bool EnvironmentTicTacToe::BoardIsFull() const
 {
-  std::string input;
-  is >> input;
-  if (input == " ")
-  {
-    player = Player::PLAYER_NONE;
-  }
-  else if (input == "X")
-  {
-    player = Player::PLAYER_1;
-  }
-  else if (input == "O")
-  {
-    player = Player::PLAYER_2;
-  }
-  else
-  {
-    throw std::runtime_error("Invalid input for Player enum.");
-  }
-  return is;
+  auto none = static_cast<int>(Player::PLAYER_NONE);
+  return torch::all(m_board != none).item<bool>();
 }

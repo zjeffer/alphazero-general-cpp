@@ -10,7 +10,7 @@ private:
   float m_priorProbability;
 
 public:
-  MoveTicTacToe(uint row, uint column, float priorProbability);
+  MoveTicTacToe(uint row, uint column, float priorProbability = 0.0F);
   ~MoveTicTacToe() override = default;
 
   std::pair<uint, uint> GetCoordinates() const override;

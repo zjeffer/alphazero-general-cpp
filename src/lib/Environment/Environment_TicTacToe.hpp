@@ -3,10 +3,6 @@
 #include "Environment.hpp"
 #include "Move_TicTacToe.hpp"
 
-// create iostreams for Player enum
-std::ostream & operator<<(std::ostream & os, Player const & player);
-std::istream & operator>>(std::istream & is, Player & player);
-
 class EnvironmentTicTacToe : public Environment
 {
 private:
@@ -18,6 +14,10 @@ private:
 public:
   EnvironmentTicTacToe();
   ~EnvironmentTicTacToe() override = default;
+
+  EnvironmentTicTacToe(EnvironmentTicTacToe const & other);
+
+  [[nodiscard]] std::unique_ptr<Environment> Clone() const override;
 
   Player GetCurrentPlayer() const override;
   void   SetCurrentPlayer(Player player) override;
@@ -35,8 +35,8 @@ public:
 
   Player GetPlayerAtCoordinates(uint row, uint column) const override;
 
-  torch::Tensor const & GetBoard() override;
-  void                  SetBoard(torch::Tensor const & board) override;
+  torch::Tensor const & GetBoard() const override;
+  void                  SetBoard(torch::Tensor const & board, Player currentPlayer) override;
 
   [[nodiscard]] torch::Tensor BoardToInput() const override;
 
@@ -46,4 +46,9 @@ public:
   void PrintBoard() const override;
 
   void ResetEnvironment() override;
+
+  std::string PlayerToString(Player player) const override;
+
+private:
+  bool BoardIsFull() const;
 };
