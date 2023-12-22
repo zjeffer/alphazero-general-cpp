@@ -5,18 +5,15 @@
 #include "lib/DataManager/DataManager.hpp"
 #include "lib/Logging/Logger.hpp"
 #include "lib/Utilities/RandomGenerator.hpp"
+#include "lib/Utilities/Time.hpp"
 
-Game::Game(std::shared_ptr<Environment> environment, std::unique_ptr<Agent> agent1, std::unique_ptr<Agent> agent2, GameOptions gameOptions)
+Game::Game(std::shared_ptr<Environment> environment, std::vector<std::shared_ptr<Agent>> const & agents, GameOptions gameOptions)
   : m_environment(std::move(environment))
-  , m_agent1(std::move(agent1))
-  , m_agent2(std::move(agent2))
+  , m_agents(agents)
   , m_gameOptions(std::move(gameOptions))
 {
-  // reset random seed
+  // reset random seed every game
   RandomGenerator::ResetSeed();
-
-  // generate random game ID (for saving memory)
-  m_gameID = RandomGenerator::GenerateRandomNumber(10000, 99999);
 }
 
 void Game::PlayGame()
@@ -49,52 +46,57 @@ void Game::PlayMove()
 {
   LINFO << "=================== Playing move ===================";
   // run simulations
-  auto    currentPlayer = m_environment->GetCurrentPlayer();
+  auto currentPlayer = m_environment->GetCurrentPlayer();
+
+  auto    rootNode = std::make_shared<Node>(m_environment);
+  auto    mcts     = std::make_shared<MCTS>(rootNode, m_gameOptions.dirichletNoiseOptions);
   Agent * currentAgent;
-  switch (currentPlayer)
+  try
   {
-  case Player::PLAYER_1:
-    currentAgent = m_agent1.get();
-    break;
-  case Player::PLAYER_2:
-    currentAgent = m_agent2.get();
-    break;
-  case Player::PLAYER_NONE:
-    LWARN << "Invalid player";
-    exit(1);
+    currentAgent = m_agents[(int)currentPlayer - 1].get();
+  }
+  catch (std::exception const & e)
+  {
+    LWARN << "Could not get agent for player " << m_environment->PlayerToString(currentPlayer);
+    LWARN << "Exception: " << e.what();
+    throw std::runtime_error("Could not get agent for player " + m_environment->PlayerToString(currentPlayer));
   }
 
-  auto rootNode = std::make_shared<Node>(m_environment);
-  auto mcts     = std::make_shared<MCTS>(rootNode);
   currentAgent->RunSimulations(mcts, m_gameOptions.simsPerMove);
-
   AddElementToMemory(rootNode->GetEnvironment(), currentPlayer, mcts->GetRoot()->GetChildren());
 
   // print possible moves
   LDEBUG << "Possible moves:";
   for (auto const & child: mcts->GetRoot()->GetChildren())
   {
-    LDEBUG << "[" << child->GetMove()->ToString() << "] Q = " << child->GetQValue() << ", U = " << child->GetUValue() << ", N = " << child->GetVisitCount();
+    LDEBUG << "[" << child->GetMove()->ToString() << "] P = " << child->GetPriorProbability() << ", Q = " << child->GetQValue()
+           << ", U = " << child->GetUValue() << ", N = " << child->GetVisitCount();
   }
 
   // based on the simulations, get the best move
   auto const & bestMove = mcts->GetBestMove(m_gameOptions.stochasticSearch);
-  LINFO << "Best move: " << bestMove->ToString() << " with probability " << bestMove->GetPriorProbability();
+  LINFO << "Best move: " << bestMove->ToString();
   m_environment->MakeMove(*bestMove);
 }
 
 void Game::AddElementToMemory(std::shared_ptr<Environment> const & environment, Player currentPlayer, std::vector<std::shared_ptr<Node>> const & children)
 {
   // add moves to list of moves
-  std::vector<std::pair<std::shared_ptr<Move>, uint>> moves;
+  std::vector<std::pair<std::shared_ptr<Move>, float>> moves;
   moves.reserve(children.size());
+  // get total visit count of all children
+  uint totalVisitCount = 0;
   for (auto const & child: children)
   {
-    moves.emplace_back(std::make_pair<std::shared_ptr<Move>, uint>(child->GetMove(), child->GetVisitCount()));
+    totalVisitCount += child->GetVisitCount();
+  }
+  for (auto const & child: children)
+  {
+    moves.emplace_back(std::make_pair<std::shared_ptr<Move>, float>(child->GetMove(), (float)child->GetVisitCount() / (float)totalVisitCount));
   }
 
   // create memory element
-  MemoryElement memoryElement(environment->GetBoard(), currentPlayer, Player::PLAYER_NONE, moves);
+  MemoryElement memoryElement(environment->GetBoard().clone(), currentPlayer, Player::PLAYER_NONE, moves);
   m_memory.push_back(memoryElement);
 }
 
@@ -103,8 +105,16 @@ void Game::SaveMemoryToFile(Player winner)
   // set winner in all memory elements
   for (auto & element: m_memory)
   {
-    element.m_winner = winner;
+    element.winner = winner;
   }
   // save to file
-  DataManager::SaveGame(m_gameOptions.memoryFolder / ("game_" + std::to_string(m_gameID) + ".bin"), m_memory);
+  try
+  {
+    DataManager::SaveGame(m_gameOptions.memoryFolder / ("game_" + GetTimeAsString("%Y%m%d-%H%M%S") + ".bin"), m_memory);
+  }
+  catch (std::exception const & e)
+  {
+    LWARN << "Failed to save game to file. Exception: " << e.what();
+    throw std::runtime_error("Failed to save game to file");
+  }
 }

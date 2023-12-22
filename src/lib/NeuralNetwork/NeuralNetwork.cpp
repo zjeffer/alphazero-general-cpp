@@ -3,19 +3,19 @@
 #include "../Logging/Logger.hpp"
 
 NeuralNetwork::NeuralNetwork()
-  : m_device(torch::Device(torch::kCPU))
+  : m_device(Device())
 {
-  InitializeCuda();
 }
 
 NeuralNetwork::NeuralNetwork(NetworkArchitecture const & architecture)
   : NeuralNetwork()
 {
   m_net = Network(architecture);
+  m_net->to(m_device.GetDevice());
 }
 
-NeuralNetwork::NeuralNetwork(std::filesystem::path const & path)
-  : NeuralNetwork()
+NeuralNetwork::NeuralNetwork(NetworkArchitecture const & architecture, std::filesystem::path const & path)
+  : NeuralNetwork(architecture)
 {
   LoadModel(path);
 }
@@ -27,14 +27,23 @@ Network NeuralNetwork::GetNetwork()
 
 std::pair<torch::Tensor, torch::Tensor> NeuralNetwork::Predict(torch::Tensor & input)
 {
-  return m_net->forward(input);
+  try
+  {
+    return m_net->forward(input);
+  }
+  catch (std::exception const & e)
+  {
+    LWARN << "Error in network Predict function: " << e.what();
+    throw std::runtime_error("Error in network Predict function: " + std::string(e.what()));
+  }
 }
 
 bool NeuralNetwork::LoadModel(std::filesystem::path const & path)
 {
+  LINFO << "Loading model from " << path;
   try
   {
-    torch::load(m_net, path);
+    torch::load(m_net, path, m_device.GetDevice());
   }
   catch (std::exception const & e)
   {
@@ -56,23 +65,4 @@ std::filesystem::path NeuralNetwork::SaveModel(std::filesystem::path const & pat
     throw;
   }
   return path;
-}
-
-void NeuralNetwork::InitializeCuda()
-{
-  if (torch::cuda::is_available())
-  {
-    try
-    {
-      m_device = torch::Device(torch::kCUDA);
-    }
-    catch (std::exception const & e)
-    {
-      LWARN << "Error initializing CUDA: " << e.what();
-    }
-  }
-  else
-  {
-    LWARN << "CUDA is not available. Using CPU instead.";
-  }
 }

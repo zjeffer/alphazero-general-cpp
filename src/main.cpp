@@ -1,6 +1,9 @@
 #include <iostream>
 
 #include "Game.hpp"
+#include "lib/ArgumentParsing/ArgumentParser.hpp"
+#include "lib/Configuration/Configuration.hpp"
+#include "lib/DataManager/DataManager.hpp"
 #include "lib/Environment/Environment_TicTacToe.hpp"
 #include "lib/Logging/Logger.hpp"
 #include "lib/NeuralNetwork/NeuralNetwork.hpp"
@@ -11,45 +14,106 @@ Logger logger;
 // create static generator
 std::mt19937 RandomGenerator::generator(std::random_device{}());
 
-int main()
+void SelfPlay(Arguments const & arguments)
+{
+  NetworkArchitecture architecture = LoadArchitecture(arguments.networkArchitecturePath);
+  AgentOptions        agentOptions = LoadAgentOptions(arguments.agentConfigPath);
+  GameOptions         gameOptions  = LoadGameOptions(arguments.gameConfigPath);
+
+  // load or create model
+  std::shared_ptr<NeuralNetwork> neuralNetwork;
+  if (std::filesystem::exists(arguments.modelPath))
+  {
+    neuralNetwork = std::make_unique<NeuralNetwork>(architecture, arguments.modelPath);
+  }
+  else
+  {
+    // check if modelPath is writable
+    std::ofstream file(arguments.modelPath);
+    if (!file)
+    {
+      throw std::runtime_error("Model file destination is not writable: " + arguments.modelPath.string());
+    }
+    file.close();
+    neuralNetwork = std::make_unique<NeuralNetwork>(architecture);
+    neuralNetwork->SaveModel(arguments.modelPath);
+  }
+
+  // create agents
+  std::vector<std::shared_ptr<Agent>> agents;
+  agents.reserve(agentOptions.agentNames.size());
+  for (auto const & agentName: agentOptions.agentNames)
+  {
+    agents.emplace_back(std::make_unique<Agent>(agentName, neuralNetwork));
+  }
+
+  while (true)
+  {
+    Game game = Game(std::make_unique<EnvironmentTicTacToe>(), agents, gameOptions);
+    game.PlayGame();
+  }
+}
+
+void Train(Arguments const & arguments)
+{
+  NetworkArchitecture architecture   = LoadArchitecture(arguments.networkArchitecturePath);
+  TrainOptions        trainerOptions = LoadTrainOptions(arguments.trainConfigPath);
+
+  // load model
+  if (!std::filesystem::exists(arguments.modelPath))
+  {
+    throw std::runtime_error("Model file does not exist: " + arguments.modelPath.string());
+  }
+  auto neuralNetwork = std::make_shared<NeuralNetwork>(architecture, arguments.modelPath);
+
+  // load data
+  std::vector<MemoryElement> data;
+  DataManager                dataManager = DataManager();
+  for (auto const & file: std::filesystem::directory_iterator(arguments.dataFolder))
+  {
+    if (file.path().extension() == ".bin")
+    {
+      try
+      {
+        auto newData = DataManager::LoadGame<MoveTicTacToe>(file.path());
+        data.insert(data.end(), newData.begin(), newData.end());
+      }
+      catch (std::exception const & e)
+      {
+        LWARN << "Failed to load game from " << file.path().string() << ". Exception: " << e.what();
+        throw std::runtime_error("Failed to load game from " + file.path().string() + ". Exception: " + e.what());
+      }
+    }
+  }
+  Dataset dataset = Dataset(data);
+
+  // train
+  LINFO << "Creating trainer";
+  Trainer trainer = Trainer(neuralNetwork);
+  LINFO << "Starting training";
+  trainer.Train(dataset, trainerOptions);
+
+  // TODO: implement a better way to name trained models
+  neuralNetwork->SaveModel(std::string(arguments.modelPath.parent_path() / arguments.modelPath.stem().string()) + "_trained"
+                           + arguments.modelPath.extension().string());
+}
+
+int main(int argc, char ** argv)
 {
   // reset random seed
   RandomGenerator::ResetSeed();
 
-  // TODO: read the architecture from a json file
-  auto ticTacToeArchitecture = NetworkArchitecture{
-    .inputPlanes            = 3,  // 3 planes: 1 for X, 1 for 0, 1 for current player
-    .width                  = 3,  // 3x3 board
-    .height                 = 3,  // 3x3 board
-    .residualBlocks         = 2,  // alphaZero uses 19, we use 2 for tic-tac-toe
-    .filters                = 32, // 32 convolution filters per layer
-    .policyOutputs          = 9,  // 1 * 3 * 3 = 9
-    .policyFilters          = 2,  // alphaZero uses 2 policy filters
-    .valueFilters           = 1,  // alphaZero uses 1 value filter
-    .valueHeadLinearNeurons = 16, // alphaZero uses 256, we use 16 for tic-tac-toe
-    // convolution options
-    .kernelSize = 3, // 3x3 kernel
-    .padding    = 1, // padding of 1
-    .stride     = 1, // stride of 1
-  };
-  NeuralNetwork neuralNetwork1 = NeuralNetwork(ticTacToeArchitecture);
-  NeuralNetwork neuralNetwork2 = NeuralNetwork(ticTacToeArchitecture);
+  Arguments arguments = ParseArguments(argc, argv);
+  auto      device    = Device(arguments.useCuda);
 
-  // TODO: read the agent names from a json file
-  auto agent1 = std::make_unique<Agent>("X", neuralNetwork1);
-  auto agent2 = std::make_unique<Agent>("0", neuralNetwork2);
-
-  // TODO: read the options from a json file
-  auto gameOptions = GameOptions{
-    .saveMemory       = true,
-    .maxMoves         = 9,
-    .simsPerMove      = 200,
-    .stochasticSearch = true,
-  };
-  Game game = Game(std::make_unique<EnvironmentTicTacToe>(), std::move(agent1), std::move(agent2), gameOptions);
-
-  // self-play
-  game.PlayGame();
+  if (arguments.train)
+  {
+    Train(arguments);
+  }
+  else
+  {
+    SelfPlay(arguments);
+  }
 
   return 0;
 }

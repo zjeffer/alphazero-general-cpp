@@ -4,7 +4,7 @@
 #include <string>
 
 #include "../Environment/Environment.hpp"
-#include "Network.hpp"
+#include "Device.hpp"
 #include "NeuralNetworkInterface.hpp"
 
 /**
@@ -15,12 +15,12 @@
 class NeuralNetwork : public NeuralNetworkInterface
 {
 private:
-  torch::Device m_device;
-  Network       m_net = nullptr;
+  Device  m_device;
+  Network m_net = nullptr;
 
 public:
   NeuralNetwork(NetworkArchitecture const & architecture);
-  NeuralNetwork(std::filesystem::path const & path);
+  NeuralNetwork(NetworkArchitecture const & architecture, std::filesystem::path const & path);
   ~NeuralNetwork() override = default;
 
   Network GetNetwork() override;
@@ -32,5 +32,4 @@ public:
 
 private:
   NeuralNetwork();       // private default constructor so we can easily initialize common stuff in the other constructors
-  void InitializeCuda(); // loads cuda if available
 };

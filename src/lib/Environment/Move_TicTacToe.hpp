@@ -19,4 +19,5 @@ public:
   float                 GetPriorProbability() const override;
   void                  SetPriorProbability(float priorProbability) override;
   std::string           ToString() const override;
+  size_t                GetIndex() const override;
 };

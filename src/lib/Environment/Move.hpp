@@ -16,4 +16,5 @@ public:
   virtual float                 GetPriorProbability() const                 = 0;
   virtual void                  SetPriorProbability(float priorProbability) = 0;
   virtual std::string           ToString() const                            = 0;
+  virtual size_t                GetIndex() const                            = 0;
 };

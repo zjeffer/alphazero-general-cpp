@@ -63,7 +63,7 @@ public:
     std::stringstream ss;
     LogColor          color = CustomSink::GetColor(msg._level);
     ss << ADD_COLOR(color) << "[" << msg.timestamp("%H:%M:%S") << "]"
-       << "[" << std::setw(7) << msg.level() << "/" << msg.file() << ":" << msg.line() << "] " << RESET_COLOR;
+       << "[" << std::setw(7) << msg.level() << "][" << msg.file() << ":" << msg.line() << "] " << RESET_COLOR;
     return ss.str();
   }
 };

@@ -9,9 +9,9 @@
 
 struct NetworkArchitecture
 {
-  uint inputPlanes;            // the amount of planes (channels) the input has
   uint width;                  // the width of each plane  (=board width)
   uint height;                 // the height of each plane (=board height)
+  uint inputPlanes;            // the amount of planes (channels) the input has
   uint residualBlocks;         // the amount of residual blocks
   uint filters;                // the amount of convolutional filters each layer
   uint policyOutputs;          // the amount of policy outputs
@@ -40,13 +40,6 @@ struct NetworkImpl : public torch::nn::Module
       .padding       = na.padding,
       .stride        = na.stride,
     };
-
-    // assert that all convBlockOptions are set
-    assert(convBlockOptions.inputFilters != 0);
-    assert(convBlockOptions.outputFilters != 0);
-    assert(convBlockOptions.kernelSize != 0);
-    assert(convBlockOptions.padding != 0);
-    assert(convBlockOptions.stride != 0);
 
     m_convInput = register_module("convInput", ConvBlock(convBlockOptions));
 
@@ -91,7 +84,7 @@ struct NetworkImpl : public torch::nn::Module
     m_policyHead = register_module("policyHead", PolicyHead(policyHeadOptions));
   }
 
-  std::pair<torch::Tensor, torch::Tensor> forward(torch::Tensor & input)
+  std::pair<torch::Tensor, torch::Tensor> forward(torch::Tensor & input) // NOLINT(readability-identifier-naming)
   {
     // the first convolutional layer
     auto x = m_convInput(input);

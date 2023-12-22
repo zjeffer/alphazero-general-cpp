@@ -36,3 +36,8 @@ std::string MoveTicTacToe::ToString() const
 {
   return std::to_string(m_row) + ", " + std::to_string(m_column);
 }
+
+size_t MoveTicTacToe::GetIndex() const
+{
+  return m_row * 3 + m_column;
+}

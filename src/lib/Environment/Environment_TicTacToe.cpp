@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "../Logging/Logger.hpp"
+#include "../NeuralNetwork/Device.hpp"
 
 namespace
 {
@@ -12,7 +13,7 @@ auto constexpr INPUT_PLANES    = 3; // 3 planes of rows * columns: player 1, pla
 } // namespace
 
 EnvironmentTicTacToe::EnvironmentTicTacToe()
-  : m_board(torch::zeros({BOARD_SIZE_ROWS, BOARD_SIZE_COLS}))
+  : m_board(torch::zeros({BOARD_SIZE_ROWS, BOARD_SIZE_COLS}, Device::GetInstance().GetDevice()))
 {
 }
 
@@ -176,19 +177,26 @@ Player EnvironmentTicTacToe::GetWinner() const
 
 torch::Tensor EnvironmentTicTacToe::BoardToInput() const
 {
-  torch::Tensor input = torch::zeros({INPUT_PLANES, m_board.size(0), m_board.size(1)});
-  // first plane is where player 1 has pieces
-  // second plane is where player 2 has pieces
-  // third plane shows which player's turn it is
-  input[0] = m_board.where(m_board == static_cast<int>(Player::PLAYER_1), 0);
-  input[1] = m_board.where(m_board == static_cast<int>(Player::PLAYER_2), 0);
-  input[2] = torch::full({m_board.size(0), m_board.size(1)}, static_cast<int>(m_currentPlayer));
-  return input.unsqueeze(0);
+  try
+  {
+    torch::Tensor input = torch::zeros({INPUT_PLANES, m_board.size(0), m_board.size(1)}, Device::GetInstance().GetDevice());
+    // first plane is where player 1 has pieces
+    // second plane is where player 2 has pieces
+    // third plane shows which player's turn it is
+    input[0] = m_board.where(m_board == static_cast<int>(Player::PLAYER_1), 0);
+    input[1] = m_board.where(m_board == static_cast<int>(Player::PLAYER_2), 0);
+    input[2] = torch::full({m_board.size(0), m_board.size(1)}, static_cast<int>(m_currentPlayer));
+    return input.unsqueeze(0);
+  }
+  catch (std::exception const & e)
+  {
+    LWARN << "Exception caught in BoardToInput: " << e.what();
+    throw;
+  }
 }
 
 void EnvironmentTicTacToe::PrintBoard() const
 {
-  LINFO << "Current player: " << PlayerToString(m_currentPlayer);
   std::ostringstream oss;
   oss << std::endl;
   auto printDashes = [this, &oss]()
@@ -210,6 +218,7 @@ void EnvironmentTicTacToe::PrintBoard() const
     oss << "|" << std::endl;
   }
   printDashes();
+  oss << "Current player: " << PlayerToString(m_currentPlayer) << std::endl;
   LINFO << oss.str();
 }
 

@@ -4,8 +4,9 @@
 #include "../../lib/Utilities/RandomGenerator.hpp"
 #include "../../lib/Utilities/tqdm.hpp"
 
-MCTS::MCTS(std::shared_ptr<Node> root)
+MCTS::MCTS(std::shared_ptr<Node> root, DirichletNoiseOptions const & dirichletNoiseOptions)
   : m_root(std::move(root))
+  , m_dirichletNoiseOptions(dirichletNoiseOptions)
 {
 }
 
@@ -14,71 +15,48 @@ void MCTS::RunSimulations(uint numSimulations, NeuralNetworkInterface & network)
   LINFO << "Running " << numSimulations << " simulations";
   std::shared_ptr<Node> root = GetRoot();
 
-  // TODO: add dirichlet noise to the root node
-
-  tqdm bar;
-  for (uint i = 0; i < numSimulations; i++)
+  try
   {
-    bar.progress(i, numSimulations);
-    // 1. select
-    std::shared_ptr<Node> leafNode = Select(root);
-    // 2. expand and 3. evaluate
-    float result = Expand(leafNode, network);
-    // 4. backpropagate
-    Backpropagate(leafNode, result);
+    if (m_dirichletNoiseOptions.enable)
+    {
+      Expand(root, network); // expand the root node once, so we can add dirichlet noise to it
+      AddDirichletNoiseToRoot();
+    }
   }
-  bar.finish();
+  catch (std::exception const & e)
+  {
+    LWARN << "Exception while adding dirichlet noise to root: " << e.what();
+    throw std::runtime_error("Exception while adding dirichlet noise to root: " + std::string(e.what()));
+  }
+
+  // run simulations
+  try
+  {
+    tqdm bar;
+    for (uint i = 0; i < numSimulations; i++)
+    {
+      bar.progress(i, numSimulations);
+      // 1. select
+      std::shared_ptr<Node> leafNode = Select(root);
+      // 2. expand and 3. evaluate
+      float result = Expand(leafNode, network);
+      // 4. backpropagate
+      Backpropagate(leafNode, result);
+    }
+    bar.finish();
+  }
+  catch (std::exception const & e)
+  {
+    LWARN << "Exception while running simulations: " << e.what();
+    throw std::runtime_error("Exception while running simulations: " + std::string(e.what()));
+  }
+
   LINFO << "Finished running simulations, tree depth: " << GetTreeDepth(root.get());
 }
 
 std::shared_ptr<Node> MCTS::GetRoot() const
 {
   return m_root;
-}
-
-std::shared_ptr<Move> MCTS::GetBestMove(bool stochasticSearch) const
-{
-  // get the best move from the root node
-  // if stochasticSearch is true, use the visit counts as probabilities
-  // if stochasticSearch is false, use the highest visit count
-  auto const & children = GetRoot()->GetChildren();
-  if (children.empty())
-  {
-    throw std::runtime_error("No children found");
-  }
-  if (stochasticSearch)
-  {
-    // get the visit counts
-    std::vector<float> visitCounts;
-    visitCounts.reserve(children.size());
-    for (auto const & child: children)
-    {
-      visitCounts.emplace_back(child->GetVisitCount());
-    }
-    // normalize the visit counts
-    float sum = std::accumulate(visitCounts.begin(), visitCounts.end(), 0.0F);
-    for (auto & visitCount: visitCounts)
-    {
-      visitCount /= sum;
-    }
-    // sample from the visit counts
-    uint stochasticIndex = RandomGenerator::StochasticSample(visitCounts);
-    auto bestChild       = children[stochasticIndex];
-    return bestChild->GetMove();
-  }
-
-  // find the child with the highest visit count
-  auto bestChild = std::max_element(                                                           //
-    children.begin(),                                                                          //
-    children.end(),                                                                            //
-    [](auto const & c1, auto const & c2) { return c1->GetVisitCount() < c2->GetVisitCount(); } //
-  );
-
-  if (bestChild == children.end())
-  {
-    throw std::runtime_error("No best child found");
-  }
-  return bestChild->get()->GetMove();
 }
 
 std::shared_ptr<Node> MCTS::Select(std::shared_ptr<Node> const & root)
@@ -123,9 +101,9 @@ float MCTS::Expand(std::shared_ptr<Node> const & node, NeuralNetworkInterface & 
   // 3. create a child node for each possible move in the policy output, and add them to the node
   auto validMoves = node->GetEnvironment()->GetValidMoves();
 
-  if (validMoves.empty() || node->GetEnvironment()->GetWinner() != Player::PLAYER_NONE)
+  auto winner = node->GetEnvironment()->GetWinner();
+  if (validMoves.empty() || winner != Player::PLAYER_NONE)
   {
-    auto winner = node->GetEnvironment()->GetWinner();
     if (winner == Player::PLAYER_NONE)
     {
       return 0.0F;
@@ -147,7 +125,6 @@ float MCTS::Expand(std::shared_ptr<Node> const & node, NeuralNetworkInterface & 
   {
     // get the prior from the policy output
     move->SetPriorProbability(policyOutput[move->GetRow()][move->GetColumn()].item<float>());
-    // move->SetPriorProbability(1.0F / 9.0F); // for testing
     // create a new environment with this move
     auto newEnvironment = std::shared_ptr<Environment>(node->GetEnvironment()->Clone());
     newEnvironment->MakeMove(*move);
@@ -159,7 +136,6 @@ float MCTS::Expand(std::shared_ptr<Node> const & node, NeuralNetworkInterface & 
   // 4. return the value output
   // = the value of the leaf node, assuming the current player has to make a move
   return valueOutput.view(1).item<float>();
-  // return 0.0F; // for testing
 }
 
 void MCTS::Backpropagate(std::shared_ptr<Node> const & node, float reward)
@@ -200,4 +176,86 @@ uint MCTS::GetTreeDepth(Node * root)
     }
   }
   return maxDepth + 1;
+}
+
+void MCTS::AddDirichletNoiseToRoot() const
+{
+  auto const & children = GetRoot()->GetChildren();
+  if (children.empty())
+  {
+    LWARN << "No children found, cannot add dirichlet noise";
+  }
+
+  // get the prior probabilities
+  std::vector<float> priorProbabilities;
+  priorProbabilities.reserve(children.size());
+  for (auto const & child: children)
+  {
+    priorProbabilities.emplace_back(child->GetMove()->GetPriorProbability());
+  }
+
+  // add dirichlet noise to the prior probabilities of the root node
+  std::vector<float> dirichletNoise = RandomGenerator::CalculateDirichletNoise(priorProbabilities,
+                                                                               m_dirichletNoiseOptions.alpha,
+                                                                               m_dirichletNoiseOptions.beta,
+                                                                               m_dirichletNoiseOptions.dirichletFraction);
+  for (size_t i = 0; i < children.size(); i++)
+  {
+    children[i]->GetMove()->SetPriorProbability(dirichletNoise[i]);
+  }
+}
+
+std::shared_ptr<Move> MCTS::GetBestMove(bool stochasticSearch) const
+{
+  // get the best move from the root node
+  // if stochasticSearch is true, use the visit counts as probabilities
+  // if stochasticSearch is false, use the highest visit count
+  return stochasticSearch ? GetBestMoveStochastic() : GetBestMoveDeterministic();
+}
+
+std::shared_ptr<Move> MCTS::GetBestMoveStochastic() const
+{
+  auto const & children = GetRoot()->GetChildren();
+  if (children.empty())
+  {
+    throw std::runtime_error("No children found while getting best move");
+  }
+  // get the visit counts
+  std::vector<float> visitCounts;
+  visitCounts.reserve(children.size());
+  for (auto const & child: children)
+  {
+    visitCounts.emplace_back(child->GetVisitCount());
+  }
+  // normalize the visit counts
+  float sum = std::accumulate(visitCounts.begin(), visitCounts.end(), 0.0F);
+  for (auto & visitCount: visitCounts)
+  {
+    visitCount /= sum;
+  }
+  // sample from the visit counts
+  uint stochasticIndex = RandomGenerator::StochasticSample(visitCounts);
+  auto bestChild       = children[stochasticIndex];
+  return bestChild->GetMove();
+}
+
+std::shared_ptr<Move> MCTS::GetBestMoveDeterministic() const
+{
+  auto const & children = GetRoot()->GetChildren();
+  if (children.empty())
+  {
+    throw std::runtime_error("No children found while getting best move");
+  }
+  // find the child with the highest visit count
+  auto bestChild = std::max_element(                                                           //
+    children.begin(),                                                                          //
+    children.end(),                                                                            //
+    [](auto const & c1, auto const & c2) { return c1->GetVisitCount() < c2->GetVisitCount(); } //
+  );
+
+  if (bestChild == children.end())
+  {
+    throw std::runtime_error("No best child found");
+  }
+  return bestChild->get()->GetMove();
 }

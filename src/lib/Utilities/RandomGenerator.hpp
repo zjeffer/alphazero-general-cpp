@@ -28,6 +28,38 @@ public:
     return distribution(generator);
   }
 
+  // Generate a vector of floats from a gamma distribution
+  static std::vector<float> SampleFromGamma(size_t size, float alpha, float beta)
+  {
+    std::gamma_distribution<float> distribution(alpha, beta);
+    std::vector<float>             gammaVector;
+    for (size_t i = 0; i < size; i++)
+    {
+      gammaVector.emplace_back(distribution(generator));
+    }
+    float sum = std::accumulate(gammaVector.begin(), gammaVector.end(), 0.0F);
+    for (auto & n: gammaVector)
+    {
+      n /= sum;
+    }
+    return gammaVector;
+  }
+
+  // Calculate dirichlet noise based on a given vector of probabilities
+  static std::vector<float> CalculateDirichletNoise(std::vector<float> const & probabilities, float alpha, float beta, float dirichletFraction)
+  {
+    std::vector<float> dirichletNoiseVector;
+
+    std::vector<float> noise = SampleFromGamma(probabilities.size(), alpha, beta);
+    dirichletNoiseVector.reserve(noise.size());
+    for (size_t i = 0; i < noise.size(); i++)
+    {
+      dirichletNoiseVector.emplace_back(probabilities[i] * (1 - dirichletFraction) + noise[i] * dirichletFraction);
+    }
+
+    return dirichletNoiseVector;
+  }
+
   // sample stochastically
   static size_t StochasticSample(std::vector<float> const & probabilities)
   {

@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <string>
 
-#include "Network.hpp"
+#include "Architecture/Network.hpp"
 
 class NeuralNetworkInterface
 {
