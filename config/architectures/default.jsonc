@@ -1,0 +1,20 @@
+{
+  "board": { // 3x3 board
+    "width": 3,
+    "height": 3
+  },
+  "network_architecture": {
+    "input_planes": 3,
+    "residual_blocks": 2,
+    "filters": 32,
+    "policy_outputs": 9, // amount of possible moves
+    "policy_filters": 2,
+    "value_filters": 1,
+    "value_head_linear_neurons": 16,
+    "kernel": {
+      "size": 3,
+      "padding": 1,
+      "stride": 1
+    }
+  }
+}

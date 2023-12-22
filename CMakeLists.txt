@@ -12,6 +12,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${OpenCV_LIBS})
 include_directories(${TORCH_INCLUDE_DIRS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+set(CMAKE_CXX_STANDARD 23)
 
 ###### GoogleTest ######
 add_subdirectory(vendor/googletest)
@@ -22,11 +23,17 @@ set(CMAKE_PREFIX_PATH /usr/local/lib/cmake/g3log)
 find_package(g3log CONFIG REQUIRED)
 include_directories(${G3LOG_INCLUDE_DIRS})
 
+###### nlohmann_json ######
+find_package(nlohmann_json REQUIRED)
+# workaround for https://github.com/nlohmann/json/issues/4051
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DJSON_HAS_RANGES=0")
+
 ###### main files ######
 file (GLOB PROJECT_SOURCES
     ${PROJECT_SOURCE_DIR}/src/Game.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/Agent/*.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/DataManager/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/lib/Configuration/*.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/Environment/*.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/Logging/*.cpp
     ${PROJECT_SOURCE_DIR}/src/lib/MCTS/*.cpp

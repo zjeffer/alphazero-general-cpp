@@ -1,0 +1,12 @@
+{
+  "save_memory": true,
+  "max_moves": 9,
+  "sims_per_move": 200,
+  "stochastic_search": true,
+  "dirichlet_noise": {
+    "enable": true, // add dirichlet noise to the root node every move
+    "alpha": 0.3,
+    "beta": 1.0,
+    "dirichlet_fraction": 0.25
+  }
+}

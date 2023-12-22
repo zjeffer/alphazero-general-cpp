@@ -23,8 +23,11 @@ RUN sudo chown -R $USERNAME:$USERNAME /app
 RUN mkdir /app/vendor/g3log/build
 RUN cd /app/vendor/g3log/build && cmake .. && sudo cmake --build . --target install
 
+# json
+RUN sudo pacman -Syy --noconfirm nlohmann-json
+
 # zsh & oh-my-zsh
-RUN sudo pacman -S --noconfirm zsh
+RUN sudo pacman -Syy --noconfirm zsh
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 RUN sudo chsh -s /bin/zsh $USERNAME
 
