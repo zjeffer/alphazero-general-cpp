@@ -31,8 +31,8 @@ public:
   Game(std::shared_ptr<Environment> environment, std::vector<std::shared_ptr<Agent>> const & agents, GameOptions gameOptions);
   ~Game() = default;
 
-  void PlayGame();
-  void PlayMove();
+  Player PlayGame();
+  void   PlayMove();
 
 private:
   void AddElementToMemory(std::shared_ptr<Environment> const & environment, Player currentPlayer, std::vector<std::shared_ptr<Node>> const & children);

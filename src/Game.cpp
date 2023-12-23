@@ -16,7 +16,7 @@ Game::Game(std::shared_ptr<Environment> environment, std::vector<std::shared_ptr
   RandomGenerator::ResetSeed();
 }
 
-void Game::PlayGame()
+Player Game::PlayGame()
 {
   LINFO << "Starting new game";
   uint moveCounter = 0;
@@ -40,6 +40,7 @@ void Game::PlayGame()
   auto winner = m_environment->GetWinner();
   LINFO << "Winner: " << m_environment->PlayerToString(winner);
   SaveMemoryToFile(winner);
+  return winner;
 }
 
 void Game::PlayMove()

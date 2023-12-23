@@ -19,6 +19,7 @@ void SelfPlay(Arguments const & arguments)
   NetworkArchitecture architecture = LoadArchitecture(arguments.networkArchitecturePath);
   AgentOptions        agentOptions = LoadAgentOptions(arguments.agentConfigPath);
   GameOptions         gameOptions  = LoadGameOptions(arguments.gameConfigPath);
+  gameOptions.memoryFolder         = arguments.dataFolder;
 
   // load or create model
   std::shared_ptr<NeuralNetwork> neuralNetwork;
@@ -47,10 +48,19 @@ void SelfPlay(Arguments const & arguments)
     agents.emplace_back(std::make_unique<Agent>(agentName, neuralNetwork));
   }
 
+  // keep tally of wins
+  std::map<Player, uint> wins;
+  uint                   totalGames = 0;
   while (true)
   {
-    Game game = Game(std::make_unique<EnvironmentTicTacToe>(), agents, gameOptions);
-    game.PlayGame();
+    Game game   = Game(std::make_unique<EnvironmentTicTacToe>(), agents, gameOptions);
+    auto winner = game.PlayGame();
+    wins[winner]++;
+    totalGames++;
+    LINFO << "Tally after playing " << totalGames << " game(s): \n"
+          << "  Player 1: " << wins[Player::PLAYER_1] << "\n"
+          << "  Player 2: " << wins[Player::PLAYER_2] << "\n"
+          << "  Draws: " << wins[Player::PLAYER_NONE] << "\n";
   }
 }
 
@@ -104,7 +114,7 @@ int main(int argc, char ** argv)
   RandomGenerator::ResetSeed();
 
   Arguments arguments = ParseArguments(argc, argv);
-  auto      device    = Device(arguments.useCuda);
+  auto &    device    = Device::GetInstance(arguments.useCuda);
 
   if (arguments.train)
   {

@@ -104,6 +104,12 @@ Arguments ParseArguments(int argc, char ** argv)
       arguments.agentConfigPath = input.GetCmdOption("--agent-config");
     }
 
+    // folder where games are stored
+    if (input.CmdOptionExists("--data-folder"))
+    {
+      arguments.dataFolder = input.GetCmdOption("--data-folder");
+    }
+
     // training
     if (input.CmdOptionExists("--train"))
     {
@@ -120,19 +126,13 @@ Arguments ParseArguments(int argc, char ** argv)
       {
         throw std::runtime_error("Training configuration file does not exist: " + arguments.trainConfigPath.string());
       }
-
-      // folder where games are stored
-      if (input.CmdOptionExists("--data-folder"))
+      if (!std::filesystem::exists(arguments.dataFolder))
       {
-        arguments.dataFolder = input.GetCmdOption("--data-folder");
-        if (!std::filesystem::exists(arguments.dataFolder))
-        {
-          throw std::runtime_error("Data folder does not exist: " + arguments.dataFolder.string());
-        }
-        if (!std::filesystem::is_directory(arguments.dataFolder))
-        {
-          throw std::runtime_error("Data folder is not a directory: " + arguments.dataFolder.string());
-        }
+        throw std::runtime_error("Data folder does not exist: " + arguments.dataFolder.string());
+      }
+      if (!std::filesystem::is_directory(arguments.dataFolder))
+      {
+        throw std::runtime_error("Data folder is not a directory: " + arguments.dataFolder.string());
       }
     }
 
