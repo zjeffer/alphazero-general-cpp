@@ -12,7 +12,7 @@ public:
   Device(bool useCuda = false);
   ~Device() = default;
 
-  static Device & GetInstance();
+  static Device & GetInstance(bool useCuda = false);
 
   void InitializeCuda(); // loads cuda if available, otherwise loads cpu
 

@@ -15,8 +15,8 @@
 class NeuralNetwork : public NeuralNetworkInterface
 {
 private:
-  Device  m_device;
-  Network m_net = nullptr;
+  Device & m_device;
+  Network  m_net = nullptr;
 
 public:
   NeuralNetwork(NetworkArchitecture const & architecture);
@@ -31,5 +31,5 @@ public:
   std::filesystem::path SaveModel(std::filesystem::path const & path) override;
 
 private:
-  NeuralNetwork();       // private default constructor so we can easily initialize common stuff in the other constructors
+  NeuralNetwork(); // private default constructor so we can easily initialize common stuff in the other constructors
 };

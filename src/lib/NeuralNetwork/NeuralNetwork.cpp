@@ -3,7 +3,7 @@
 #include "../Logging/Logger.hpp"
 
 NeuralNetwork::NeuralNetwork()
-  : m_device(Device())
+  : m_device(Device::GetInstance())
 {
 }
 

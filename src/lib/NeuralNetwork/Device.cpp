@@ -11,9 +11,9 @@ Device::Device(bool useCuda)
   }
 }
 
-Device & Device::GetInstance()
+Device & Device::GetInstance(bool useCuda)
 {
-  static Device instance;
+  static Device instance(useCuda);
   return instance;
 }
 
