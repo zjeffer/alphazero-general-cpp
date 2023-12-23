@@ -4,7 +4,7 @@
   "sims_per_move": 200,
   "stochastic_search": true,
   "dirichlet_noise": {
-    "enable": false,
+    "enable": true,
     "alpha": 0.3,
     "beta": 1.0,
     "dirichlet_fraction": 0.25
