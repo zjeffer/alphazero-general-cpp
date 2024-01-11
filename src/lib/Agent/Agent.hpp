@@ -6,6 +6,12 @@
 struct AgentOptions
 {
   std::vector<std::string> agentNames;
+
+  AgentOptions(std::filesystem::path const & path)
+  {
+    auto config = Configuration(path);
+    agentNames  = config.Get<std::vector<std::string>>("agent_names");
+  }
 };
 
 class Agent

@@ -47,5 +47,6 @@ T Configuration::Get(std::string const & key)
 template<typename T>
 void Configuration::Set(std::string const & key, T const & value)
 {
-  m_root[key] = value;
+  throw std::runtime_error("Not implemented");
+  // TODO
 }

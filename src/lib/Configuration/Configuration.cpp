@@ -7,13 +7,16 @@
 using json = nlohmann::json;
 
 Configuration::Configuration(std::filesystem::path const & filePath)
+  : m_filePath(filePath)
 {
-  if (!std::filesystem::exists(filePath))
-  {
-    throw std::runtime_error("Configuration file does not exist: " + filePath.string());
-  }
+
   try
   {
+    if (!std::filesystem::exists(filePath))
+    {
+      std::ofstream file(filePath);
+      file << "{}";
+    }
     std::ifstream file(filePath);
     // parse with nlohmann_json (no callback, don't allow exceptions, allow comments)
     m_root = json::parse(file, nullptr, false, true);

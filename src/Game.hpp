@@ -15,6 +15,21 @@ struct GameOptions
   std::filesystem::path memoryFolder = "data"; // the folder to save the games to. Each game will be saved in its own file
   bool                  useDirichletNoise = true; // if true, add dirichlet noise to the root node on every move
   DirichletNoiseOptions dirichletNoiseOptions;    // alpha and beta for the dirichlet noise which is added to the root node on every move
+
+  GameOptions(std::filesystem::path const & file)
+  {
+    auto config           = Configuration(file);
+    saveMemory            = config.Get<bool>("save_memory");
+    maxMoves              = config.Get<uint>("max_moves");
+    simsPerMove           = config.Get<uint>("sims_per_move");
+    stochasticSearch      = config.Get<bool>("stochastic_search");
+    dirichletNoiseOptions = DirichletNoiseOptions{
+      .enable            = config.Get<bool>("dirichlet_noise.enable"),
+      .alpha             = config.Get<float>("dirichlet_noise.alpha"),
+      .beta              = config.Get<float>("dirichlet_noise.beta"),
+      .dirichletFraction = config.Get<float>("dirichlet_noise.dirichlet_fraction"),
+    };
+  }
 };
 
 class Game

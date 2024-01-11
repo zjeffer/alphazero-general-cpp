@@ -14,30 +14,48 @@ Logger logger;
 // create static generator
 std::mt19937 RandomGenerator::generator(std::random_device{}());
 
+void CreateModel(Arguments const & arguments)
+{
+  // create model
+  try
+  {
+    LINFO << "Creating model with architecture from " << arguments.networkArchitecturePath.string() << " and saving to " << arguments.modelFolder.string();
+    if (std::filesystem::exists(arguments.modelFolder / "model.pt"))
+    {
+      throw std::runtime_error("Model already exists in " + arguments.modelFolder.string() + " folder");
+    }
+    if (!std::filesystem::exists(arguments.networkArchitecturePath))
+    {
+      throw std::runtime_error("Network architecture file does not exist: " + arguments.networkArchitecturePath.string());
+    }
+    auto networkArchitecture = NetworkArchitecture(arguments.networkArchitecturePath);
+    auto network             = NeuralNetwork(networkArchitecture);
+    network.SaveModel(arguments.modelFolder); // will save the model and architecture file
+  }
+  catch (std::exception const & e)
+  {
+    LWARN << "Failed to create model. Exception: \n" << e.what();
+    throw std::runtime_error("Failed to create model. Exception: \n" + std::string(e.what()));
+  }
+}
+
 void SelfPlay(Arguments const & arguments)
 {
-  NetworkArchitecture architecture = LoadArchitecture(arguments.networkArchitecturePath);
-  AgentOptions        agentOptions = LoadAgentOptions(arguments.agentConfigPath);
-  GameOptions         gameOptions  = LoadGameOptions(arguments.gameConfigPath);
-  gameOptions.memoryFolder         = arguments.dataFolder;
+  auto agentOptions        = AgentOptions(arguments.agentConfigPath);
+  auto gameOptions         = GameOptions(arguments.gameConfigPath);
+  gameOptions.memoryFolder = arguments.dataFolder;
 
   // load or create model
   std::shared_ptr<NeuralNetwork> neuralNetwork;
-  if (std::filesystem::exists(arguments.modelPath))
+  if (std::filesystem::exists(arguments.modelFolder / "model.pt"))
   {
-    neuralNetwork = std::make_unique<NeuralNetwork>(architecture, arguments.modelPath);
-  }
-  else
-  {
-    // check if modelPath is writable
-    std::ofstream file(arguments.modelPath);
-    if (!file)
+    LINFO << "Model exists. Loading model from " << arguments.modelFolder.string() << " folder";
+    if (!std::filesystem::exists(arguments.modelFolder / "model.jsonc"))
     {
-      throw std::runtime_error("Model file destination is not writable: " + arguments.modelPath.string());
+      throw std::runtime_error("Model architecture file does not exist in " + arguments.modelFolder.string() + " folder");
     }
-    file.close();
-    neuralNetwork = std::make_unique<NeuralNetwork>(architecture);
-    neuralNetwork->SaveModel(arguments.modelPath);
+    // load existing model
+    neuralNetwork = std::make_unique<NeuralNetwork>(arguments.modelFolder);
   }
 
   // create agents
@@ -60,21 +78,22 @@ void SelfPlay(Arguments const & arguments)
     LINFO << "Tally after playing " << totalGames << " game(s): \n"
           << "  Player 1: " << wins[Player::PLAYER_1] << "\n"
           << "  Player 2: " << wins[Player::PLAYER_2] << "\n"
-          << "  Draws: " << wins[Player::PLAYER_NONE] << "\n";
+          << "  Draws:    " << wins[Player::PLAYER_NONE] << "\n";
   }
 }
 
+void Evaluate(Arguments const & arguments) {}
+
 void Train(Arguments const & arguments)
 {
-  NetworkArchitecture architecture   = LoadArchitecture(arguments.networkArchitecturePath);
-  TrainOptions        trainerOptions = LoadTrainOptions(arguments.trainConfigPath);
+  auto trainerOptions = TrainOptions(arguments.trainConfigPath);
 
   // load model
-  if (!std::filesystem::exists(arguments.modelPath))
+  if (!std::filesystem::exists(arguments.modelFolder))
   {
-    throw std::runtime_error("Model file does not exist: " + arguments.modelPath.string());
+    throw std::runtime_error("Model file does not exist: " + arguments.modelFolder.string());
   }
-  auto neuralNetwork = std::make_shared<NeuralNetwork>(architecture, arguments.modelPath);
+  auto neuralNetwork = std::make_shared<NeuralNetwork>(arguments.modelFolder);
 
   // load data
   std::vector<MemoryElement> data;
@@ -104,8 +123,7 @@ void Train(Arguments const & arguments)
   trainer.Train(dataset, trainerOptions);
 
   // TODO: implement a better way to name trained models
-  neuralNetwork->SaveModel(std::string(arguments.modelPath.parent_path() / arguments.modelPath.stem().string()) + "_trained"
-                           + arguments.modelPath.extension().string());
+  neuralNetwork->SaveModel(arguments.modelFolder.string() + "_trained");
 }
 
 int main(int argc, char ** argv)
@@ -116,13 +134,28 @@ int main(int argc, char ** argv)
   Arguments arguments = ParseArguments(argc, argv);
   auto &    device    = Device::GetInstance(arguments.useCuda);
 
-  if (arguments.train)
+  switch (arguments.mode)
   {
-    Train(arguments);
+  case Mode::CREATEMODEL:
+  {
+    CreateModel(arguments);
+    break;
   }
-  else
+  case Mode::SELFPLAY:
   {
     SelfPlay(arguments);
+    break;
+  }
+  case Mode::EVALUATE:
+  {
+    Evaluate(arguments);
+    break;
+  }
+  case Mode::TRAIN:
+  {
+    Train(arguments);
+    break;
+  }
   }
 
   return 0;

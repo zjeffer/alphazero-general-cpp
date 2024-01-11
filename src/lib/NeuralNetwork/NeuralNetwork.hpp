@@ -15,20 +15,21 @@
 class NeuralNetwork : public NeuralNetworkInterface
 {
 private:
-  Device & m_device;
-  Network  m_net = nullptr;
+  Device &            m_device;
+  Network             m_net = nullptr;
+  NetworkArchitecture m_architecture;
 
 public:
   NeuralNetwork(NetworkArchitecture const & architecture);
-  NeuralNetwork(NetworkArchitecture const & architecture, std::filesystem::path const & path);
+  NeuralNetwork(std::filesystem::path const & folder);
   ~NeuralNetwork() override = default;
 
   Network GetNetwork() override;
 
   std::pair<torch::Tensor, torch::Tensor> Predict(torch::Tensor & input) override;
 
-  bool                  LoadModel(std::filesystem::path const & path) override;
-  std::filesystem::path SaveModel(std::filesystem::path const & path) override;
+  bool                  LoadModel(std::filesystem::path const & folder) override;
+  std::filesystem::path SaveModel(std::filesystem::path const & folder) override;
 
 private:
   NeuralNetwork(); // private default constructor so we can easily initialize common stuff in the other constructors

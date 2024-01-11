@@ -12,6 +12,14 @@ struct TrainOptions
   size_t batchSize    = 32;
   size_t epochs       = 10;
   float  learningRate = 0.001F;
+
+  TrainOptions(std::filesystem::path const & file)
+  {
+    auto config  = Configuration(file);
+    batchSize    = config.Get<uint>("batch_size");
+    epochs       = config.Get<uint>("epochs");
+    learningRate = config.Get<float>("learning_rate");
+  }
 };
 
 class Trainer

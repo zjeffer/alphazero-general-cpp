@@ -10,14 +10,16 @@ NeuralNetwork::NeuralNetwork()
 NeuralNetwork::NeuralNetwork(NetworkArchitecture const & architecture)
   : NeuralNetwork()
 {
-  m_net = Network(architecture);
+  // create a new network with the given architecture
+  m_architecture = architecture;
+  m_net          = Network(architecture);
   m_net->to(m_device.GetDevice());
 }
 
-NeuralNetwork::NeuralNetwork(NetworkArchitecture const & architecture, std::filesystem::path const & path)
-  : NeuralNetwork(architecture)
+NeuralNetwork::NeuralNetwork(std::filesystem::path const & folder)
+  : NeuralNetwork()
 {
-  LoadModel(path);
+  LoadModel(folder);
 }
 
 Network NeuralNetwork::GetNetwork()
@@ -38,12 +40,14 @@ std::pair<torch::Tensor, torch::Tensor> NeuralNetwork::Predict(torch::Tensor & i
   }
 }
 
-bool NeuralNetwork::LoadModel(std::filesystem::path const & path)
+bool NeuralNetwork::LoadModel(std::filesystem::path const & folder)
 {
-  LINFO << "Loading model from " << path;
+  LINFO << "Loading model from " << folder;
   try
   {
-    torch::load(m_net, path, m_device.GetDevice());
+    m_architecture = NetworkArchitecture(folder / "model.jsonc");
+    torch::load(m_net, folder / "model.pt", m_device.GetDevice());
+    m_net->to(m_device.GetDevice());
   }
   catch (std::exception const & e)
   {
@@ -53,16 +57,19 @@ bool NeuralNetwork::LoadModel(std::filesystem::path const & path)
   return true;
 }
 
-std::filesystem::path NeuralNetwork::SaveModel(std::filesystem::path const & path)
+std::filesystem::path NeuralNetwork::SaveModel(std::filesystem::path const & folder)
 {
+  LINFO << "Saving model to " << folder;
   try
   {
-    torch::save(m_net, path);
+    std::filesystem::create_directories(folder);
+    m_architecture.SaveToFile(folder / "model.jsonc");
+    torch::save(m_net, folder / "model.pt");
   }
   catch (std::exception const & e)
   {
     LWARN << "Error saving model: " << e.what();
     throw;
   }
-  return path;
+  return folder;
 }

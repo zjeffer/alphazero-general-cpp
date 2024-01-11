@@ -81,5 +81,8 @@ std::pair<torch::Tensor, torch::Tensor> Trainer::CalculateLoss(std::pair<torch::
   auto policyLoss = -torch::log_softmax(predictions.first, 1).mul(policyTarget).sum(1).mean();
   // calculated using the mean squared error loss
   auto valueLoss = torch::nn::functional::mse_loss(predictions.second, valueTarget);
+
+  valueLoss *= 9.0F;
+
   return {policyLoss, valueLoss};
 }
