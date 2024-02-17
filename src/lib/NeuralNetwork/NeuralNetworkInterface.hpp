@@ -14,6 +14,6 @@ public:
 
   virtual std::pair<torch::Tensor, torch::Tensor> Predict(torch::Tensor & input) = 0;
 
-  virtual bool                  LoadModel(std::filesystem::path const & folder) = 0;
+  virtual void                  LoadModel(std::filesystem::path const & folder) = 0;
   virtual std::filesystem::path SaveModel(std::filesystem::path const & folder) = 0;
 };

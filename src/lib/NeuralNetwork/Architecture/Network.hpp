@@ -29,35 +29,35 @@ struct NetworkArchitecture
   NetworkArchitecture(std::filesystem::path const & file)
   {
     auto config            = Configuration(file);
-    width                  = config.Get<uint>("board.width");
-    height                 = config.Get<uint>("board.height");
-    inputPlanes            = config.Get<uint>("network_architecture.input_planes");
-    residualBlocks         = config.Get<uint>("network_architecture.residual_blocks");
-    filters                = config.Get<uint>("network_architecture.filters");
-    policyOutputs          = config.Get<uint>("network_architecture.policy_outputs");
-    policyFilters          = config.Get<uint>("network_architecture.policy_filters");
-    valueFilters           = config.Get<uint>("network_architecture.value_filters");
-    valueHeadLinearNeurons = config.Get<uint>("network_architecture.value_head_linear_neurons");
-    kernelSize             = config.Get<uint>("network_architecture.kernel.size");
-    padding                = config.Get<uint>("network_architecture.kernel.padding");
-    stride                 = config.Get<uint>("network_architecture.kernel.stride");
+    width                  = config.Get<uint>("board/width");
+    height                 = config.Get<uint>("board/height");
+    inputPlanes            = config.Get<uint>("network_architecture/input_planes");
+    residualBlocks         = config.Get<uint>("network_architecture/residual_blocks");
+    filters                = config.Get<uint>("network_architecture/filters");
+    policyOutputs          = config.Get<uint>("network_architecture/policy_outputs");
+    policyFilters          = config.Get<uint>("network_architecture/policy_filters");
+    valueFilters           = config.Get<uint>("network_architecture/value_filters");
+    valueHeadLinearNeurons = config.Get<uint>("network_architecture/value_head_linear_neurons");
+    kernelSize             = config.Get<uint>("network_architecture/kernel/size");
+    padding                = config.Get<uint>("network_architecture/kernel/padding");
+    stride                 = config.Get<uint>("network_architecture/kernel/stride");
   }
 
   void SaveToFile(std::filesystem::path const & file) const
   {
     Configuration config = Configuration(file);
-    config.Set<uint>("board.width", width);
-    config.Set<uint>("board.height", height);
-    config.Set<uint>("network_architecture.input_planes", inputPlanes);
-    config.Set<uint>("network_architecture.residual_blocks", residualBlocks);
-    config.Set<uint>("network_architecture.filters", filters);
-    config.Set<uint>("network_architecture.policy_outputs", policyOutputs);
-    config.Set<uint>("network_architecture.policy_filters", policyFilters);
-    config.Set<uint>("network_architecture.value_filters", valueFilters);
-    config.Set<uint>("network_architecture.value_head_linear_neurons", valueHeadLinearNeurons);
-    config.Set<uint>("network_architecture.kernel.size", kernelSize);
-    config.Set<uint>("network_architecture.kernel.padding", padding);
-    config.Set<uint>("network_architecture.kernel.stride", stride);
+    config.Set<uint>("board/width", width);
+    config.Set<uint>("board/height", height);
+    config.Set<uint>("network_architecture/input_planes", inputPlanes);
+    config.Set<uint>("network_architecture/residual_blocks", residualBlocks);
+    config.Set<uint>("network_architecture/filters", filters);
+    config.Set<uint>("network_architecture/policy_outputs", policyOutputs);
+    config.Set<uint>("network_architecture/policy_filters", policyFilters);
+    config.Set<uint>("network_architecture/value_filters", valueFilters);
+    config.Set<uint>("network_architecture/value_head_linear_neurons", valueHeadLinearNeurons);
+    config.Set<uint>("network_architecture/kernel/size", kernelSize);
+    config.Set<uint>("network_architecture/kernel/padding", padding);
+    config.Set<uint>("network_architecture/kernel/stride", stride);
     config.Save();
   }
 };

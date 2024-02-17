@@ -1,7 +1,7 @@
 {
   "save_memory": true,
   "max_moves": 9,
-  "sims_per_move": 200,
+  "sims_per_move": 800,
   "stochastic_search": true,
   "dirichlet_noise": {
     "enable": true,

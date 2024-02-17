@@ -4,49 +4,33 @@
 template<typename T>
 T Configuration::Get(std::string const & key)
 {
-  // key can be "string" or "string.string.string"
-  auto value = m_root;
-  // split the key into a vector of strings
-  std::vector<std::string> keyParts;
-  std::string              keyPart;
-  std::stringstream        keyStream(key);
-  while (std::getline(keyStream, keyPart, '.'))
-  {
-    keyParts.push_back(keyPart);
-  }
-  // get the value
   try
   {
-    for (auto const & keyPart: keyParts)
+    if (key.empty())
     {
-      if (value.is_object() || value.is_array())
-      {
-        value = value[keyPart];
-      }
-      else
-      {
-        LWARN << "Configuration value is not an object or an array.";
-      }
+      throw std::runtime_error("Cannot get Json value with empty json key");
     }
+    auto pointer = nlohmann::json::json_pointer(key.starts_with("/") ? key : "/" + key);
+    return m_root[pointer].get<T>();
   }
   catch (std::exception const & e)
   {
-    throw std::runtime_error("Failed to get configuration value: " + std::string(e.what()));
-  }
-  try
-  {
-    // return the value as the requested type using nlohmann-json
-    return value.get<T>();
-  }
-  catch (std::exception const & e)
-  {
-    throw std::runtime_error("Failed to convert configuration value: " + std::string(e.what()));
+    LWARN << "Failed to get configuration value: " << e.what();
+    throw std::runtime_error("Failed to get configuration value for key: " + key);
   }
 }
 
 template<typename T>
 void Configuration::Set(std::string const & key, T const & value)
 {
-  throw std::runtime_error("Not implemented");
-  // TODO
+  try
+  {
+    auto pointer    = nlohmann::json::json_pointer(key.starts_with("/") ? key : "/" + key);
+    m_root[pointer] = value;
+  }
+  catch (std::exception const & e)
+  {
+    LWARN << "Failed to set configuration value: " << e.what();
+    throw std::runtime_error("Failed to set configuration value for key: " + key + " with value: " + std::to_string(value));
+  }
 }

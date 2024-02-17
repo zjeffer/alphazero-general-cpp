@@ -33,7 +33,7 @@ auto constexpr PARAMETER_MODEL2 = "--model2";
 void PrintHelpMessage(std::string const & programName)
 {
   std::cout << "\nUsage: " << programName << " <mode> <options>"
-            << "  " << PARAMETER_HELP << "                           Print this help message\n\n"
+            << "  " << PARAMETER_HELP << "    Print this help message\n\n"
             << "Modes: (choose one)\n"
             << "  " << PARAMETER_MODE_CREATE << "       Create mode: create a new model\n"
             << "  " << PARAMETER_MODE_SELFPLAY << "     Self-play mode: play games using a given model\n"

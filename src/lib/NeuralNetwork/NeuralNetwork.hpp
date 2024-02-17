@@ -28,7 +28,7 @@ public:
 
   std::pair<torch::Tensor, torch::Tensor> Predict(torch::Tensor & input) override;
 
-  bool                  LoadModel(std::filesystem::path const & folder) override;
+  void                  LoadModel(std::filesystem::path const & folder) override;
   std::filesystem::path SaveModel(std::filesystem::path const & folder) override;
 
 private:

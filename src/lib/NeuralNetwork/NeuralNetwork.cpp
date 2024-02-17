@@ -40,21 +40,21 @@ std::pair<torch::Tensor, torch::Tensor> NeuralNetwork::Predict(torch::Tensor & i
   }
 }
 
-bool NeuralNetwork::LoadModel(std::filesystem::path const & folder)
+void NeuralNetwork::LoadModel(std::filesystem::path const & folder)
 {
   LINFO << "Loading model from " << folder;
   try
   {
     m_architecture = NetworkArchitecture(folder / "model.jsonc");
+    m_net          = Network(m_architecture);
     torch::load(m_net, folder / "model.pt", m_device.GetDevice());
     m_net->to(m_device.GetDevice());
   }
   catch (std::exception const & e)
   {
     LWARN << "Error loading model: " << e.what();
-    return false;
+    throw std::runtime_error("Error loading model: " + std::string(e.what()));
   }
-  return true;
 }
 
 std::filesystem::path NeuralNetwork::SaveModel(std::filesystem::path const & folder)

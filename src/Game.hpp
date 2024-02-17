@@ -24,10 +24,10 @@ struct GameOptions
     simsPerMove           = config.Get<uint>("sims_per_move");
     stochasticSearch      = config.Get<bool>("stochastic_search");
     dirichletNoiseOptions = DirichletNoiseOptions{
-      .enable            = config.Get<bool>("dirichlet_noise.enable"),
-      .alpha             = config.Get<float>("dirichlet_noise.alpha"),
-      .beta              = config.Get<float>("dirichlet_noise.beta"),
-      .dirichletFraction = config.Get<float>("dirichlet_noise.dirichlet_fraction"),
+      .enable            = config.Get<bool>("dirichlet_noise/enable"),
+      .alpha             = config.Get<float>("dirichlet_noise/alpha"),
+      .beta              = config.Get<float>("dirichlet_noise/beta"),
+      .dirichletFraction = config.Get<float>("dirichlet_noise/dirichlet_fraction"),
     };
   }
 };
